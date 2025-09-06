@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { SeriesButton } from '@/components/SeriesButton';
 import UploadDropzone from '@/components/UploadDropzone';
 import { SeriesTextArea } from '@/components/SeriesTextArea';
 import { ConsentCheckbox } from '@/components/ConsentCheckbox';
 import ProgressStepper from '@/components/ProgressStepper';
 import { VideoPlayer } from '@/components/VideoPlayer';
-import Navigation from '@/components/Navigation';
 import { useToast } from '@/hooks/use-toast';
+import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 
 type GenerationState = 'idle' | 'validating' | 'uploading' | 'queued' | 'processing' | 'assembling' | 'ready' | 'error';
 
@@ -146,26 +147,20 @@ const Create = () => {
   const isGenerating = ['uploading', 'queued', 'processing', 'assembling'].includes(state);
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-24 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-10 right-5 w-20 h-20 bg-primary/10 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-3 w-16 h-16 bg-accent/10 rounded-full blur-lg animate-pulse" style={{animationDelay: '1.5s'}}></div>
-        </div>
-        
-        <div className="relative px-4 pt-8 max-w-md mx-auto">
-          {/* Header - More Engaging */}
-          <div className="flex items-center justify-between mb-12">
-            <a href="/" className="p-3 hover:bg-white/50 rounded-xl transition-all duration-200 backdrop-blur-sm">
-              <ArrowLeft className="h-5 w-5" />
-            </a>
-            <div className="text-center">
-              <h1 className="text-2xl font-black text-foreground">Create Magic</h1>
-              <p className="text-xs text-primary font-semibold">✨ Your viral video starts here</p>
-            </div>
-            <div className="w-11" /> {/* Spacer */}
+    <div className="grain min-h-screen">
+      <NavBar />
+      <div className="container-page pt-24 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-10">
+          <a href="/" className="px-3 py-2 rounded-full border border-white/20 hover:bg-white/10">
+            <ArrowLeft className="h-5 w-5" />
+          </a>
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-extrabold">Create Magic</h1>
+            <p className="text-xs text-muted-foreground">✨ Your viral video starts here</p>
           </div>
+          <div className="w-11" />
+        </div>
 
           {state === 'ready' && generationData.videoUrl ? (
             /* Preview Screen */
@@ -218,14 +213,11 @@ const Create = () => {
               </SeriesButton>
             </div>
           ) : (
-            /* Upload Form - More Engaging */
+            /* Upload Form */
             <div className="space-y-10">
               {/* Upload Selfie */}
               <div className="relative">
-                <div className="absolute -top-2 -left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">1</span>
-                </div>
-                <div className="space-y-4 bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-xl">
+                <div className="space-y-4 glass rounded-2xl p-6">
                   <div className="flex items-center space-x-3">
                     <h2 className="text-xl font-bold text-foreground">📸 Upload your selfie</h2>
                     {selfieFile && <span className="text-green-500 text-lg">✅</span>}
@@ -244,10 +236,7 @@ const Create = () => {
 
               {/* Script Input */}
               <div className="relative">
-                <div className="absolute -top-2 -left-2 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">2</span>
-                </div>
-                <div className="space-y-4 bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-xl">
+                <div className="space-y-4 glass rounded-2xl p-6">
                   <div className="flex items-center space-x-3">
                     <h2 className="text-xl font-bold text-foreground">💬 Your viral sentence</h2>
                     {script.length > 0 && <span className="text-green-500 text-lg">✅</span>}
@@ -268,10 +257,7 @@ const Create = () => {
 
               {/* Consent */}
               <div className="relative">
-                <div className="absolute -top-2 -left-2 w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">3</span>
-                </div>
-                <div className="space-y-4 bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-xl">
+                <div className="space-y-4 glass rounded-2xl p-6">
                   <div className="flex items-center space-x-3">
                     <h2 className="text-xl font-bold text-foreground">🛡️ Consent & Ethics</h2>
                     {consent && <span className="text-green-500 text-lg">✅</span>}
@@ -285,7 +271,7 @@ const Create = () => {
               </div>
 
               {/* Safety Note */}
-              <div className="bg-gradient-to-r from-muted/50 to-primary/10 rounded-2xl p-6 border border-primary/20">
+              <div className="rounded-2xl p-6 border border-white/10 bg-white/5">
                 <div className="flex items-center space-x-3 mb-2">
                   <span className="text-lg">🔒</span>
                   <p className="font-semibold text-foreground">Safe & Responsible AI</p>
@@ -325,9 +311,8 @@ const Create = () => {
           )}
         </div>
       </div>
-      
-      <Navigation />
-    </>
+      <Footer />
+    </div>
   );
 };
 
