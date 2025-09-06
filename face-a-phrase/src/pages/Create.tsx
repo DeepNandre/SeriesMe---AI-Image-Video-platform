@@ -146,11 +146,119 @@ const Create = () => {
 
   const isGenerating = ['uploading', 'queued', 'processing', 'assembling'].includes(state);
 
+  let content: JSX.Element;
+  if (state === 'ready' && generationData.videoUrl) {
+    content = (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Your video is ready!</h2>
+          <p className="text-muted-foreground">Looks great in vertical format</p>
+        </div>
+        <VideoPlayer
+          src={generationData.videoUrl}
+          poster={generationData.posterUrl}
+          duration={generationData.duration}
+          onDownload={handleDownload}
+          onShare={() => toast({ title: "Share feature", description: "Coming soon!" })}
+          onSave={() => handleSave()}
+        />
+        <SeriesButton variant="outline" size="lg" className="w-full" onClick={handleReset}>
+          Generate Another
+        </SeriesButton>
+      </div>
+    );
+  } else if (isGenerating) {
+    content = (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Creating your video...</h2>
+          <p className="text-muted-foreground">This usually takes 2-3 minutes</p>
+        </div>
+        <ProgressStepper
+          currentStage={state as any}
+          progress={generationData.progress}
+          etaSeconds={generationData.etaSeconds}
+          error={generationData.error}
+        />
+        <SeriesButton variant="ghost" size="default" className="w-full" onClick={handleCancel}>
+          Cancel
+        </SeriesButton>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="space-y-10">
+        <div className="relative">
+          <div className="space-y-4 glass rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <h2 className="text-xl font-bold text-foreground">📸 Upload your selfie</h2>
+              {selfieFile && <span className="text-green-500 text-lg">✅</span>}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">Clear headshot, good lighting, looking at camera</p>
+            <UploadDropzone onFileSelect={handleFileSelect} accept={['image/jpeg', 'image/png']} maxSizeMB={10} disabled={isGenerating} />
+          </div>
+        </div>
+        <div className="relative">
+          <div className="space-y-4 glass rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <h2 className="text-xl font-bold text-foreground">💬 Your viral sentence</h2>
+              {script.length > 0 && <span className="text-green-500 text-lg">✅</span>}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium">One powerful sentence that will captivate your audience</p>
+            <SeriesTextArea
+              placeholder="Type your viral sentence here... (max 200 characters)"
+              value={script}
+              onChange={(e) => setScript(e.target.value)}
+              maxLength={200}
+              disabled={isGenerating}
+              helpText="💡 Pro tip: Ask a question, share a secret, or make a bold statement!"
+            />
+          </div>
+        </div>
+        <div className="relative">
+          <div className="space-y-4 glass rounded-2xl p-6">
+            <div className="flex items-center space-x-3">
+              <h2 className="text-xl font-bold text-foreground">🛡️ Consent & Ethics</h2>
+              {consent && <span className="text-green-500 text-lg">✅</span>}
+            </div>
+            <ConsentCheckbox checked={consent} onChange={setConsent} disabled={isGenerating} />
+          </div>
+        </div>
+        <div className="rounded-2xl p-6 border border-white/10 bg-white/5">
+          <div className="flex items-center space-x-3 mb-2">
+            <span className="text-lg">🔒</span>
+            <p className="font-semibold text-foreground">Safe & Responsible AI</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Personal use only • Consent required • Visible watermark • No public figures</p>
+        </div>
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-2xl blur-md group-hover:blur-lg transition-all duration-300 opacity-75"></div>
+          <SeriesButton
+            variant="primary"
+            size="lg"
+            className={`relative w-full font-black text-lg py-6 rounded-2xl shadow-2xl transition-all duration-300 ${
+              canGenerate ? 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white transform hover:scale-105' : 'bg-muted text-muted-foreground cursor-not-allowed'
+            }`}
+            disabled={!canGenerate}
+            loading={isGenerating}
+            onClick={handleGenerate}
+          >
+            {isGenerating ? '🎬 Creating Your Viral Video...' : canGenerate ? '🚀 CREATE MY VIRAL VIDEO!' : '⏳ Complete Steps Above'}
+          </SeriesButton>
+        </div>
+        {state === 'error' && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <p className="text-destructive text-center font-medium">{generationData.error}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grain min-h-screen">
       <NavBar />
       <div className="container-page pt-24 pb-24">
-        {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <a href="/" className="px-3 py-2 rounded-full border border-white/20 hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" />
@@ -161,158 +269,7 @@ const Create = () => {
           </div>
           <div className="w-11" />
         </div>
-
-          {state === 'ready' && generationData.videoUrl ? (
-            <>
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2">Your video is ready!</h2>
-                <p className="text-muted-foreground">Looks great in vertical format</p>
-              </div>
-
-              <VideoPlayer
-                src={generationData.videoUrl}
-                poster={generationData.posterUrl}
-                duration={generationData.duration}
-                onDownload={handleDownload}
-                onShare={() => toast({ title: "Share feature", description: "Coming soon!" })}
-                onSave={() => handleSave()}
-              />
-
-              <SeriesButton 
-                variant="outline" 
-                size="lg" 
-                className="w-full"
-                onClick={handleReset}
-              >
-                Generate Another
-              </SeriesButton>
-            </div>
-            </>
-          ) : isGenerating ? (
-            <>
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-2">Creating your video...</h2>
-                <p className="text-muted-foreground">This usually takes 2-3 minutes</p>
-              </div>
-
-              <ProgressStepper
-                currentStage={state as any}
-                progress={generationData.progress}
-                etaSeconds={generationData.etaSeconds}
-                error={generationData.error}
-              />
-
-              <SeriesButton 
-                variant="ghost" 
-                size="default"
-                className="w-full"
-                onClick={handleCancel}
-              >
-                Cancel
-              </SeriesButton>
-            </div>
-            </>
-          ) : (
-            <>
-            <div className="space-y-10">
-              {/* Upload Selfie */}
-              <div className="relative">
-                <div className="space-y-4 glass rounded-2xl p-6">
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-xl font-bold text-foreground">📸 Upload your selfie</h2>
-                    {selfieFile && <span className="text-green-500 text-lg">✅</span>}
-                  </div>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    Clear headshot, good lighting, looking at camera
-                  </p>
-                  <UploadDropzone
-                    onFileSelect={handleFileSelect}
-                    accept={['image/jpeg', 'image/png']}
-                    maxSizeMB={10}
-                    disabled={isGenerating}
-                  />
-                </div>
-              </div>
-
-              {/* Script Input */}
-              <div className="relative">
-                <div className="space-y-4 glass rounded-2xl p-6">
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-xl font-bold text-foreground">💬 Your viral sentence</h2>
-                    {script.length > 0 && <span className="text-green-500 text-lg">✅</span>}
-                  </div>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    One powerful sentence that will captivate your audience
-                  </p>
-                  <SeriesTextArea
-                    placeholder="Type your viral sentence here... (max 200 characters)"
-                    value={script}
-                    onChange={(e) => setScript(e.target.value)}
-                    maxLength={200}
-                    disabled={isGenerating}
-                    helpText="💡 Pro tip: Ask a question, share a secret, or make a bold statement!"
-                  />
-                </div>
-              </div>
-
-              {/* Consent */}
-              <div className="relative">
-                <div className="space-y-4 glass rounded-2xl p-6">
-                  <div className="flex items-center space-x-3">
-                    <h2 className="text-xl font-bold text-foreground">🛡️ Consent & Ethics</h2>
-                    {consent && <span className="text-green-500 text-lg">✅</span>}
-                  </div>
-                  <ConsentCheckbox
-                    checked={consent}
-                    onChange={setConsent}
-                    disabled={isGenerating}
-                  />
-                </div>
-              </div>
-
-              {/* Safety Note */}
-              <div className="rounded-2xl p-6 border border-white/10 bg-white/5">
-                <div className="flex items-center space-x-3 mb-2">
-                  <span className="text-lg">🔒</span>
-                  <p className="font-semibold text-foreground">Safe & Responsible AI</p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Personal use only • Consent required • Visible watermark • No public figures
-                </p>
-              </div>
-
-              {/* Generate Button - More Exciting */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-2xl blur-md group-hover:blur-lg transition-all duration-300 opacity-75"></div>
-                <SeriesButton
-                  variant="primary"
-                  size="lg"
-                  className={`relative w-full font-black text-lg py-6 rounded-2xl shadow-2xl transition-all duration-300 ${
-                    canGenerate 
-                      ? 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white transform hover:scale-105' 
-                      : 'bg-muted text-muted-foreground cursor-not-allowed'
-                  }`}
-                  disabled={!canGenerate}
-                  loading={isGenerating}
-                  onClick={handleGenerate}
-                >
-                  {isGenerating ? '🎬 Creating Your Viral Video...' : canGenerate ? '🚀 CREATE MY VIRAL VIDEO!' : '⏳ Complete Steps Above'}
-                </SeriesButton>
-              </div>
-
-              {state === 'error' && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                  <p className="text-destructive text-center font-medium">
-                    {generationData.error}
-                  </p>
-                </div>
-              )}
-            </div>
-            </>
-          )}
-        </div>
+        {content}
         <Footer />
       </div>
     </div>
