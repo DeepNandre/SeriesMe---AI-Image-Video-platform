@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SeriesMe Design System - Mobile-first, Content Creation Tool Aesthetic */
+
+@layer base {
+  :root {
+    /* Core Brand Colors */
+    --background: 0 0% 100%;
+    --foreground: 210 11% 9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 11% 9%;
+    
+    /* Primary Brand - Vibrant Blue */
+    --primary: 230 89% 67%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 230 89% 62%;
+    --primary-active: 230 89% 57%;
+    
+    /* Accent - Teal */
+    --accent: 174 100% 38%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 174 100% 33%;
+    
+    /* Secondary - Light Gray */
+    --secondary: 220 13% 96%;
+    --secondary-foreground: 210 11% 9%;
+    --secondary-hover: 220 13% 91%;
+    
+    /* Muted - Medium Gray */
+    --muted: 220 13% 96%;
+    --muted-foreground: 220 9% 46%;
+    
+    /* Destructive - Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Success - Green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning - Orange */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 230 89% 67%;
+    
+    /* Video Preview Colors */
+    --video-bg: 0 0% 7%;
+    --caption-bg: 0 0% 0%;
+    --caption-text: 0 0% 100%;
+    
+    /* Layout */
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-pill: 999px;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark Theme */
+    --background: 210 11% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 210 11% 7%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 210 11% 7%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Primary stays vibrant in dark */
+    --primary: 230 89% 67%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 230 89% 72%;
+    --primary-active: 230 89% 62%;
+    
+    /* Accent adjusts for dark */
+    --accent: 174 100% 43%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 174 100% 48%;
+    
+    --secondary: 210 11% 13%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-hover: 210 11% 18%;
+    
+    --muted: 210 11% 13%;
+    --muted-foreground: 220 9% 55%;
+    
+    --border: 210 11% 18%;
+    --input: 210 11% 18%;
+    --ring: 230 89% 67%;
+    
+    /* Video colors remain consistent */
+    --video-bg: 0 0% 7%;
+    --caption-bg: 0 0% 0%;
+    --caption-text: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer components {
+  /* Button Animations */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/95;
+    @apply transition-all duration-200 ease-out;
+    @apply shadow-sm hover:shadow-md active:scale-[0.98];
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-muted/50 transition-colors duration-200;
+  }
+  
+  /* Upload Zone */
+  .upload-zone {
+    @apply border-2 border-dashed border-border hover:border-primary/50;
+    @apply bg-muted/20 hover:bg-muted/30;
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .upload-zone.active {
+    @apply border-primary bg-primary/5;
+  }
+  
+  /* Progress Animation */
+  .progress-bar {
+    @apply transition-all duration-500 ease-out;
+  }
+  
+  /* Video Player */
+  .video-container {
+    @apply relative bg-video-bg rounded-lg overflow-hidden;
+    @apply shadow-lg hover:shadow-xl transition-shadow duration-300;
+  }
+  
+  /* Smooth page transitions */
+  .page-enter {
+    @apply opacity-0 translate-y-2;
+  }
+  
+  .page-enter-active {
+    @apply opacity-100 translate-y-0 transition-all duration-300 ease-out;
+  }
+}
+
+@layer utilities {
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  .aspect-9-16 {
+    aspect-ratio: 9 / 16;
+  }
+  
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
