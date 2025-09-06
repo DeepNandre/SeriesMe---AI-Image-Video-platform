@@ -38,7 +38,18 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/create" element={<Create />} />
+            <Route 
+              path="/create" 
+              element={
+                FLAGS.AUTH_ENABLED ? (
+                  <ProtectedRoute>
+                    <Create />
+                  </ProtectedRoute>
+                ) : (
+                  <Create />
+                )
+              } 
+            />
             <Route path="/library" element={<Library />} />
             {/* Cloud Library - protected route example */}
             <Route 

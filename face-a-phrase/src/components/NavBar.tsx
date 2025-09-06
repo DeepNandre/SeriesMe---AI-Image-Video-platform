@@ -34,13 +34,23 @@ export default function NavBar(){
                 <SignInButton mode="modal">
                   <button className="hover:opacity-80">Sign in</button>
                 </SignInButton>
+                {/* Show CTA that prompts sign-in when not authenticated */}
+                <SignInButton mode="modal">
+                  <button className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">
+                    Make a clip
+                  </button>
+                </SignInButton>
               </SignedOut>
               <SignedIn>
                 <UserButton afterSignOutUrl="/" />
+                {/* Allow access to create page when signed in */}
+                <a href="/create" className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">
+                  Make a clip
+                </a>
               </SignedIn>
             </>
           ) : (
-            // Default CTA when auth is disabled
+            // Default CTA when auth is disabled - direct access
             <a href="/create" className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">Make a clip</a>
           )}
           

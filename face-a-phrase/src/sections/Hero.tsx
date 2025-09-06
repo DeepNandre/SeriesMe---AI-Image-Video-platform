@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+import { FLAGS } from '@/lib/flags';
 import { SeriesButton } from '@/components/SeriesButton';
 import { ArrowDownIcon, SparklesIcon, BoltIcon, StarIcon } from '@heroicons/react/24/outline';
 import { Particles } from '@/components/ui/particles';
@@ -104,12 +106,35 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
-          <SeriesButton asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <Link to="/create">
-              <SparklesIcon className="mr-2 h-5 w-5" />
-              Make a clip
-            </Link>
-          </SeriesButton>
+          {/* Main CTA - show sign-in modal when auth enabled, direct access when disabled */}
+          {FLAGS.AUTH_ENABLED ? (
+            <>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <SeriesButton size="lg" className="bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <SparklesIcon className="mr-2 h-5 w-5" />
+                    Make a clip
+                  </SeriesButton>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <SeriesButton asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Link to="/create">
+                    <SparklesIcon className="mr-2 h-5 w-5" />
+                    Make a clip
+                  </Link>
+                </SeriesButton>
+              </SignedIn>
+            </>
+          ) : (
+            <SeriesButton asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <Link to="/create">
+                <SparklesIcon className="mr-2 h-5 w-5" />
+                Make a clip
+              </Link>
+            </SeriesButton>
+          )}
+          
           <SeriesButton asChild variant="outline" size="lg" className="border-border/50 hover:bg-muted/50">
             <a href="#how">
               See how it works <ArrowDownIcon className="ml-2 h-4 w-4" />
