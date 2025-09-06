@@ -1,0 +1,11 @@
+[build]
+  command = "cd face-a-phrase && npm i && npm run build"
+  publish = "face-a-phrase/dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+
