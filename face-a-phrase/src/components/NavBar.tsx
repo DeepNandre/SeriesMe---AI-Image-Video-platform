@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { FLAGS } from '@/lib/flags';
 import ThemeToggle from './ThemeToggle';
 
 export default function NavBar(){
@@ -16,9 +18,32 @@ export default function NavBar(){
         <div className="hidden sm:flex items-center gap-6 text-sm">
           <a href="/create" className="hover:opacity-80">Create</a>
           <a href="/library" className="hover:opacity-80">Library</a>
+          {/* Cloud Library - only visible when signed in and auth enabled */}
+          {FLAGS.AUTH_ENABLED && (
+            <SignedIn>
+              <a href="/cloud" className="hover:opacity-80 text-blue-600 dark:text-blue-400">Cloud Library (beta)</a>
+            </SignedIn>
+          )}
           <a href="/about" className="hover:opacity-80">About</a>
           <a href="/privacy" className="hover:opacity-80">Privacy</a>
-          <a href="/create" className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">Make a clip</a>
+          
+          {/* Auth UI - only when AUTH_ENABLED=true */}
+          {FLAGS.AUTH_ENABLED ? (
+            <>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="hover:opacity-80">Sign in</button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </>
+          ) : (
+            // Default CTA when auth is disabled
+            <a href="/create" className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">Make a clip</a>
+          )}
+          
           <ThemeToggle />
         </div>
       </nav>

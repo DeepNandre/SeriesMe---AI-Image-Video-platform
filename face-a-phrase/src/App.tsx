@@ -5,12 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOnlineStatus } from './lib/useOnline';
 import { ThemeProvider } from './components/ThemeProvider';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SignIn, SignUp } from '@clerk/clerk-react';
+import { FLAGS } from './lib/flags';
 import Index from "./pages/Index";
 import Create from "./pages/Create";
 import Library from "./pages/Library";
+import CloudLibrary from "./pages/CloudLibrary";
 import About from "./pages/About";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -36,8 +40,38 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/create" element={<Create />} />
             <Route path="/library" element={<Library />} />
+            {/* Cloud Library - protected route example */}
+            <Route 
+              path="/cloud" 
+              element={
+                <ProtectedRoute>
+                  <CloudLibrary />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
+            {/* Auth routes - only when AUTH_ENABLED=true */}
+            {FLAGS.AUTH_ENABLED && (
+              <>
+                <Route 
+                  path="/sign-in/*" 
+                  element={
+                    <div className="flex justify-center items-center min-h-screen">
+                      <SignIn routing="path" path="/sign-in" />
+                    </div>
+                  } 
+                />
+                <Route 
+                  path="/sign-up/*" 
+                  element={
+                    <div className="flex justify-center items-center min-h-screen">
+                      <SignUp routing="path" path="/sign-up" />
+                    </div>
+                  } 
+                />
+              </>
+            )}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -2,6 +2,7 @@ export const FLAGS = {
   USE_BROWSER_RENDERER: import.meta.env.VITE_USE_BROWSER_RENDERER !== 'false', // default true
   ENABLE_TTS_ELEVENLABS: import.meta.env.VITE_ENABLE_TTS_ELEVENLABS === 'true', // default false
   SHOW_EXPERIMENTAL_BROLL: import.meta.env.VITE_SHOW_EXPERIMENTAL_BROLL === 'true', // default false
+  AUTH_ENABLED: import.meta.env.VITE_AUTH_ENABLED === 'true', // default false - optional authentication
 } as const;
 
 export type FlagName = keyof typeof FLAGS;

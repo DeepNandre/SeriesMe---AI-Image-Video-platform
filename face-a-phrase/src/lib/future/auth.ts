@@ -1,8 +1,11 @@
 /**
  * Authentication scaffolding for future user accounts
  * 
- * This file provides the foundation for implementing user authentication
- * when the product needs user accounts and data persistence.
+ * ✅ IMPLEMENTATION NOTE: Clerk authentication has been integrated!
+ * See main.tsx, App.tsx, NavBar.tsx, and ProtectedRoute.tsx for working implementation.
+ * 
+ * This file provides extended interfaces and services for when you need
+ * more advanced user management beyond Clerk's built-in features.
  */
 
 export interface User {
@@ -27,9 +30,14 @@ export interface AuthState {
 }
 
 /**
- * Authentication service interface for future implementation
+ * Extended authentication service for advanced features
  * 
- * TODO: Integrate with Auth0, Supabase, or Firebase Auth
+ * ✅ BASIC AUTH: Use Clerk hooks directly (@clerk/clerk-react)
+ * - useUser() for user data
+ * - useAuth() for auth state  
+ * - SignIn/SignUp components for auth UI
+ * 
+ * 🚀 FUTURE: This service adds subscription/plan management on top of Clerk
  */
 export class AuthService {
   private static instance: AuthService;
@@ -120,11 +128,14 @@ export class AuthService {
   }
 }
 
-// React hook for authentication state
-export const useAuth = () => {
-  // TODO: Implement React hook using AuthService
-  // This would integrate with React context/state management
+// Extended authentication hook for advanced features
+export const useAuthExtended = () => {
+  // ✅ FOR BASIC AUTH: Use @clerk/clerk-react hooks instead:
+  // import { useUser, useAuth } from '@clerk/clerk-react';
+  // const { user } = useUser();
+  // const { signOut } = useAuth();
   
+  // 🚀 FUTURE: This would add subscription/plan management
   return {
     user: null as User | null,
     loading: false,
