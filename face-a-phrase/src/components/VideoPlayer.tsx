@@ -125,7 +125,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
           </div>
 
           {/* Watermark */}
-          <div className="absolute bottom-4 right-4 bg-black/50 px-2 py-1 rounded text-xs text-white">
+          <div className="absolute bottom-4 right-4 bg-black/50 px-2 py-1 rounded text-xs text-white pointer-events-none select-none">
             SeriesMe
           </div>
         </div>

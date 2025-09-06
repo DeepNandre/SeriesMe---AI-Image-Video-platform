@@ -52,9 +52,9 @@ export default function ProgressStepper({
   }
 
   return (
-    <div className={cn("space-y-6", className)} role="status" aria-live="polite">
+    <div className={cn("space-y-6", className)}>
       {/* Progress Bar */}
-      <div className="space-y-2">
+      <div className="space-y-2" role="status" aria-live="polite" aria-atomic="true">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">
             {stages[currentStageIndex]?.label || 'Processing'}...

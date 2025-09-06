@@ -214,34 +214,32 @@ const Library = () => {
                 {/* Actions - Better Design */}
                 <div className="mt-4 pt-4 border-t border-border/30">
                   <div className="grid grid-cols-3 gap-2">
-                    <SeriesButton
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => handleDownload(video)}
-                      className="bg-white/50 backdrop-blur-sm hover:bg-primary/10 border-primary/20 text-primary font-semibold"
+                      className="bg-white/50 backdrop-blur-sm hover:bg-primary/10 border border-primary/20 text-primary font-semibold rounded-md px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                      aria-label={`Download ${video.filename}`}
+                      title="Download"
                     >
-                      <Download className="h-3 w-3 mr-1" />
-                      Download
-                    </SeriesButton>
+                      <span className="inline-flex items-center"><Download className="h-3 w-3 mr-1" />Download</span>
+                    </button>
                     
-                    <SeriesButton
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => handleDuplicate(video)}
-                      className="bg-white/50 backdrop-blur-sm hover:bg-accent/10 border-accent/20 text-accent font-semibold"
+                      className="bg-white/50 backdrop-blur-sm hover:bg-accent/10 border border-accent/20 text-accent font-semibold rounded-md px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                      aria-label={`Duplicate ${video.filename}`}
+                      title="Duplicate"
                     >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Duplicate
-                    </SeriesButton>
+                      <span className="inline-flex items-center"><Copy className="h-3 w-3 mr-1" />Duplicate</span>
+                    </button>
                     
-                    <SeriesButton
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => handleDelete(video)}
-                      className="bg-white/50 backdrop-blur-sm hover:bg-destructive/10 border-destructive/20 text-destructive font-semibold"
+                      className="bg-white/50 backdrop-blur-sm hover:bg-destructive/10 border border-destructive/20 text-destructive font-semibold rounded-md px-2 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                      aria-label={`Delete ${video.filename}`}
+                      title="Delete"
                     >
                       <Trash2 className="h-3 w-3" />
-                    </SeriesButton>
+                    </button>
                   </div>
                 </div>
               </div>
