@@ -61,7 +61,8 @@ const Create = () => {
       pollStatus(jobId);
     } catch (error) {
       setState('error');
-      setGenerationData({ error: 'Something went wrong. Try again or tweak your selfie/script.' });
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Try again or tweak your selfie/script.';
+      setGenerationData({ error: errorMessage });
     }
   };
 
@@ -92,7 +93,8 @@ const Create = () => {
       }
     } catch (error) {
       setState('error');
-      setGenerationData({ error: 'Connection lost. Please try again.' });
+      const errorMessage = error instanceof Error ? error.message : 'Connection lost. Please try again.';
+      setGenerationData({ error: errorMessage });
     }
   };
 

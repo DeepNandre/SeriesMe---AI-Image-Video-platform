@@ -1,10 +1,9 @@
-// Mock API implementation for development
-// Replace with real API calls when backend is ready
+// Production API client for SeriesMe backend
 import { z } from 'zod';
 
+// For Netlify-only deployment, use relative paths to hit Netlify Functions
+// Set VITE_API_BASE_URL only if using external backend
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '';
-// If running on Netlify, we can hit relative /api/* which redirects to functions
-const useBackend = true;
 
 export interface GenerateResponse { jobId: string }
 
@@ -24,7 +23,7 @@ export interface ResultResponse {
   height: number;
 }
 
-// zod schemas (used by typed wrappers)
+// Zod schemas for runtime validation
 export const GenerateResponseSchema = z.object({ jobId: z.string().min(1) });
 export const StatusSchema = z.object({
   status: z.enum(['queued','processing','assembling','ready','error']),
@@ -40,180 +39,86 @@ export const ResultSchema = z.object({
   height: z.number().int().positive(),
 });
 
-// Mock job storage
-const mockJobs = new Map<string, {
-  status: string;
-  progress: number;
-  etaSeconds: number;
-  createdAt: number;
-  script: string;
-}>();
+// API Error handling
+class APIError extends Error {
+  constructor(message: string, public status?: number) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
 
-export async function generateVideo(formData: FormData): Promise<GenerateResponse> {
+async function handleResponse<T>(response: Response, schema: z.ZodSchema<T>): Promise<T> {
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new APIError(`API Error: ${errorText}`, response.status);
+  }
+  
+  try {
+    const data = await response.json();
+    return schema.parse(data);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new APIError('Invalid response format from server');
+    }
+    throw new APIError('Failed to parse server response');
+  }
+}
+
+// Client-side input validation
+function validateGenerateInput(formData: FormData): void {
   const selfie = formData.get('selfie') as File;
   const script = formData.get('script') as string;
   const consent = formData.get('consent') as string;
 
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // Validate inputs
   if (!selfie || !script || consent !== 'true') {
-    throw new Error('Missing required fields');
+    throw new APIError('Missing required fields');
   }
 
-  // Validate file type
   if (!['image/jpeg', 'image/png'].includes(selfie.type)) {
-    throw new Error('Please choose a JPG/PNG under 10 MB.');
+    throw new APIError('Please choose a JPG/PNG under 10 MB.');
   }
 
-  // Validate file size (10MB limit)
   if (selfie.size > 10 * 1024 * 1024) {
-    throw new Error('Please choose a JPG/PNG under 10 MB.');
+    throw new APIError('Please choose a JPG/PNG under 10 MB.');
   }
 
-  // Validate script length
   if (script.length > 200) {
-    throw new Error('Keep it under 200 characters.');
+    throw new APIError('Keep it under 200 characters.');
   }
-
-  // Generate mock job ID
-  const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  // Store job data
-  mockJobs.set(jobId, {
-    status: 'queued',
-    progress: 0,
-    etaSeconds: 180, // 3 minutes
-    createdAt: Date.now(),
-    script,
-  });
-
-  return { jobId };
 }
 
-export async function getStatus(jobId: string): Promise<StatusResponse> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  const job = mockJobs.get(jobId);
-  if (!job) {
-    throw new Error('Job not found');
-  }
-
-  const now = Date.now();
-  const elapsed = now - job.createdAt;
-
-  // Simulate progression over time
-  let status = job.status;
-  let progress = job.progress;
-  let etaSeconds = job.etaSeconds;
-
-  // Simulate realistic progression
-  if (elapsed > 5000 && status === 'queued') {
-    status = 'processing';
-    progress = 25;
-    etaSeconds = 120;
-  } else if (elapsed > 45000 && status === 'processing') {
-    status = 'assembling';
-    progress = 75;
-    etaSeconds = 30;
-  } else if (elapsed > 90000 && status === 'assembling') {
-    status = 'ready';
-    progress = 100;
-    etaSeconds = 0;
-  } else if (status === 'processing') {
-    // Gradual progress during processing
-    const processingProgress = Math.min(75, 25 + (elapsed - 5000) / 40000 * 50);
-    progress = Math.floor(processingProgress);
-    etaSeconds = Math.max(30, 120 - (elapsed - 5000) / 1000);
-  } else if (status === 'assembling') {
-    // Gradual progress during assembling
-    const assemblingProgress = Math.min(100, 75 + (elapsed - 45000) / 45000 * 25);
-    progress = Math.floor(assemblingProgress);
-    etaSeconds = Math.max(0, 30 - (elapsed - 45000) / 1000);
-  }
-
-  // Update job status
-  job.status = status;
-  job.progress = progress;
-  job.etaSeconds = Math.floor(etaSeconds);
-
-  // Very small chance of error (for testing)
-  if (Math.random() < 0.02 && elapsed > 10000) {
-    return {
-      status: 'error',
-      error: 'Processing failed. Please try again with a different photo or script.'
-    };
-  }
-
-  return {
-    status: status as any,
-    progress,
-    etaSeconds: Math.floor(etaSeconds)
-  };
-}
-
-export async function getResult(jobId: string): Promise<ResultResponse> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  const job = mockJobs.get(jobId);
-  if (!job) {
-    throw new Error('Job not found');
-  }
-
-  if (job.status !== 'ready') {
-    throw new Error('Video not ready yet');
-  }
-
-  // Generate a simple base64 video data URL (this would be a real video URL in production)
-  const mockVideoUrl = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAABRttZGF0AAAC...';
-
-  // Clean up job after a delay
-  setTimeout(() => {
-    mockJobs.delete(jobId);
-  }, 300000); // 5 minutes
-
-  return {
-    videoUrl: mockVideoUrl,
-    posterUrl: '/placeholder.svg',
-    durationSec: Math.floor(Math.random() * 10) + 10, // 10-20 seconds
-    width: 1080,
-    height: 1920
-  };
-}
-
-// Typed wrappers for backend-ready integration
+// Production API functions
 export async function generateClip(formData: FormData): Promise<GenerateResponse> {
-  if (useBackend) {
-    const base = API_BASE || '';
-    const r = await fetch(`${base}/api/generate`, { method: 'POST', body: formData });
-    if (!r.ok) throw new Error('Generate failed');
-    return GenerateResponseSchema.parse(await r.json());
-  }
-  const res = await generateVideo(formData);
-  return GenerateResponseSchema.parse(res);
+  // Client-side validation
+  validateGenerateInput(formData);
+  
+  const url = `${API_BASE}/api/generate`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  return handleResponse(response, GenerateResponseSchema);
 }
 
 export async function pollStatus(jobId: string): Promise<StatusResponse> {
-  if (useBackend) {
-    const base = API_BASE || '';
-    const r = await fetch(`${base}/api/status?jobId=${encodeURIComponent(jobId)}`);
-    if (!r.ok) throw new Error('Status failed');
-    return StatusSchema.parse(await r.json());
+  if (!jobId) {
+    throw new APIError('Job ID is required');
   }
-  const res = await getStatus(jobId);
-  return StatusSchema.parse(res);
+  
+  const url = `${API_BASE}/api/status?jobId=${encodeURIComponent(jobId)}`;
+  const response = await fetch(url);
+  
+  return handleResponse(response, StatusSchema);
 }
 
 export async function getFinalResult(jobId: string): Promise<ResultResponse> {
-  if (useBackend) {
-    const base = API_BASE || '';
-    const r = await fetch(`${base}/api/result?jobId=${encodeURIComponent(jobId)}`);
-    if (!r.ok) throw new Error('Result failed');
-    return ResultSchema.parse(await r.json());
+  if (!jobId) {
+    throw new APIError('Job ID is required');
   }
-  const res = await getResult(jobId);
-  return ResultSchema.parse(res);
+  
+  const url = `${API_BASE}/api/result?jobId=${encodeURIComponent(jobId)}`;
+  const response = await fetch(url);
+  
+  return handleResponse(response, ResultSchema);
 }

@@ -71,46 +71,67 @@ See `face-a-phrase/docs/API_CONTRACTS_FRONTEND.md` for types/zod.
 - Lighthouse Mobile scores: record in `face-a-phrase/docs/UI_ACCEPTANCE_CHECKLIST.md`
 - Optional SadTalker talking‑head mode if we go with the dedicated backend
 
-### Optional: run the full FastAPI backend
-If you want the on‑device ffmpeg pipeline instead of serverless mocks:
+## 🚀 Ready to Launch - Choose Your Deployment
+
+SeriesMe is now production-ready with **two deployment options**:
+
+### Option 1: Netlify-Only (Recommended) ⚡
+**Complete serverless deployment - everything runs on Netlify!**
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy)
+
+- ✅ **Zero Setup**: Deploy with one click
+- ✅ **Serverless**: No servers to manage
+- ✅ **Auto-scaling**: Handles traffic spikes automatically
+- ✅ **Cost Effective**: Pay only for what you use
+
+**Quick Start**:
+```bash
+# Just deploy to Netlify - that's it!
+# See NETLIFY_DEPLOYMENT.md for full guide
 ```
+
+### Option 2: Netlify + Separate Backend
+**Traditional setup with dedicated backend service**
+
+```bash
+# Backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8001
+
+# Frontend  
+cd face-a-phrase
+echo 'VITE_API_BASE_URL=http://localhost:8001' > .env.local
+npm install && npm run dev
 ```
-Then set the frontend to use it:
-```
-echo 'VITE_API_BASE_URL=http://localhost:8001' > face-a-phrase/.env.local
-```
+
+See `DEPLOYMENT.md` for full backend deployment guide.
+
+## Architecture Comparison
+
+| Feature | Netlify-Only | Netlify + Backend |
+|---------|-------------|-------------------|
+| **Setup** | 1-click deploy | Manual backend setup |
+| **Scaling** | Auto-scales | Manual scaling |
+| **Cost** | Pay-per-use | Always-on server costs |
+| **Maintenance** | Zero maintenance | Server maintenance |
+| **Video Processing** | Cloud services | Local FFmpeg |
+| **Best For** | Most users | High-volume/custom needs |
+
+## What's New ✨
+
+- 🆕 **Netlify-Only Option**: Complete serverless deployment
+- ✅ **Real Video Generation**: Full TTS + Ken Burns + captions pipeline  
+- ✅ **Cloud Services**: ElevenLabs TTS + Cloudinary video processing
+- ✅ **Background Functions**: 15-minute processing timeouts
+- ✅ **Auto-scaling**: Handles any traffic volume
+- ✅ **Production Ready**: Both deployment options fully functional
 
 ### Helpful links
+- **Deployment Guide**: `DEPLOYMENT.md` (start here for production)
+- Project context: `docs/PROJECT_CONTEXT.md`
 - Repo map and components: `face-a-phrase/docs/REPO_MAP.md`
-- Frontend gap analysis: `face-a-phrase/docs/FRONTEND_GAP_ANALYSIS.md`
-- MRD summary: `face-a-phrase/docs/FRONTEND_MRD_SUMMARY.md`
 - API contracts: `face-a-phrase/docs/API_CONTRACTS_FRONTEND.md`
-- Acceptance checklist: `face-a-phrase/docs/UI_ACCEPTANCE_CHECKLIST.md`
-- Project context (start here): `docs/PROJECT_CONTEXT.md`
-
-```
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8001
-```
-
-- Copy `backend/.env.example` to `backend/.env` and adjust if needed.
-- Ensure ffmpeg is installed (`brew install ffmpeg`) or use Docker:
-
-```
-cd backend
-docker compose up --build
-```
-
-Switch FE to backend:
-
-```
-echo 'VITE_API_BASE_URL=http://localhost:8001' > face-a-phrase/.env.local
-```
-
->>>>>>> b10e72d (chore(repo): initialize SeriesMe app (FE+Netlify functions))
+- Frontend analysis: `face-a-phrase/docs/FRONTEND_GAP_ANALYSIS.md`
