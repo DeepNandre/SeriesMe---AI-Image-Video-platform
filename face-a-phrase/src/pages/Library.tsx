@@ -12,6 +12,8 @@ interface SavedVideo {
   createdAt: Date;
   script: string;
   videoUrl: string;
+  width?: number;
+  height?: number;
 }
 
 const Library = () => {

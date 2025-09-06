@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { SeriesButton } from '@/components/SeriesButton';
 import UploadDropzone from '@/components/UploadDropzone';
@@ -110,10 +111,38 @@ const Create = () => {
         
         setGenerationData(prev => ({ ...prev, videoUrl: result.videoUrl, posterUrl: result.posterUrl, duration: result.durationSec }));
         
-        toast({
-          title: "Video ready!",
-          description: "Your talking-head clip is ready to download.",
-        });
+        // Save to IndexedDB
+        try {
+          console.log('💾 Saving video to library...');
+          const { idbSet } = await import('@/lib/idb');
+          
+          const videoId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const savedVideo = {
+            id: videoId,
+            filename: `seriesme_${new Date().toISOString().split('T')[0]}.webm`,
+            thumbnail: result.posterUrl,
+            duration: result.durationSec,
+            createdAt: new Date(),
+            script: script,
+            videoUrl: result.videoUrl,
+            width: result.width,
+            height: result.height
+          };
+          
+          await idbSet(videoId, savedVideo);
+          console.log('✅ Video saved to library:', videoId);
+          
+          toast({
+            title: "Video ready!",
+            description: "Your talking-head clip is ready and saved to your library.",
+          });
+        } catch (error) {
+          console.error('❌ Failed to save video to library:', error);
+          toast({
+            title: "Video ready!",
+            description: "Your talking-head clip is ready to download.",
+          });
+        }
       } else if (data.status === 'error') {
         console.error('❌ Generation error:', data.error);
         setState('error');
@@ -210,9 +239,16 @@ const Create = () => {
           onShare={() => toast({ title: "Share feature", description: "Coming soon!" })}
           onSave={() => handleSave()}
         />
-        <SeriesButton variant="outline" size="lg" className="w-full" onClick={handleReset}>
-          Generate Another
-        </SeriesButton>
+        <div className="flex gap-3">
+          <SeriesButton variant="outline" size="lg" className="flex-1" onClick={handleReset}>
+            Generate Another
+          </SeriesButton>
+          <SeriesButton asChild size="lg" className="flex-1">
+            <Link to="/library">
+              View in Library
+            </Link>
+          </SeriesButton>
+        </div>
       </div>
     );
   } else if (isGenerating) {
