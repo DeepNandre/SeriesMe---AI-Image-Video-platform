@@ -1,27 +1,27 @@
 import Section from '@/components/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Type, Film, ArrowRight } from 'lucide-react';
+import { CloudArrowUpIcon, PencilSquareIcon, VideoCameraIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 
 const steps = [
   { 
-    icon: Upload, 
+    icon: CloudArrowUpIcon, 
     title: 'Upload a selfie', 
     description: 'A clear headshot with good lighting works best for AI processing.',
     number: '01',
     color: 'from-blue-500 to-cyan-500'
   },
   { 
-    icon: Type, 
+    icon: PencilSquareIcon, 
     title: 'Type one sentence', 
     description: 'Your viral message, max 200 characters. AI will sync it perfectly.',
     number: '02',
     color: 'from-cyan-500 to-emerald-500'
   },
   { 
-    icon: Film, 
+    icon: VideoCameraIcon, 
     title: 'Get your clip', 
     description: 'A 9:16 vertical video with talking head, captions, and watermark.',
     number: '03',
@@ -93,7 +93,7 @@ const Steps = () => {
                   
                   {index < steps.length - 1 && (
                     <div className="mt-6 flex justify-center">
-                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      <ArrowRightIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                   )}
                 </CardContent>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import { SeriesButton } from '@/components/SeriesButton';
-import { ArrowDown, Sparkles, Zap, Star } from 'lucide-react';
+import { ArrowDownIcon, SparklesIcon, BoltIcon, StarIcon } from '@heroicons/react/24/outline';
 import { Particles } from '@/components/ui/particles';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,9 @@ const Hero = () => {
   const y = useTransform(scrollYProgress, [0, 1], [0, prefersReducedMotion ? 0 : -200]);
 
   const features = [
-    { icon: Sparkles, text: "AI-Powered" },
-    { icon: Zap, text: "Lightning Fast" },
-    { icon: Star, text: "Viral Ready" },
+    { icon: SparklesIcon, text: "AI-Powered" },
+    { icon: BoltIcon, text: "Lightning Fast" },
+    { icon: StarIcon, text: "Viral Ready" },
   ];
 
   return (
@@ -77,7 +77,7 @@ const Hero = () => {
         >
           Transform your selfie into a <span className="text-primary font-semibold">talking-head video</span> with 
           <span className="text-accent font-semibold"> AI captions</span> and 
-          <span className="text-primary font-semibold"> viral-ready</span> effects — completely free.
+          <span className="text-primary font-semibold"> viral-ready</span> effects completely free.
         </motion.p>
 
         {/* Feature Pills */}
@@ -106,13 +106,13 @@ const Hero = () => {
         >
           <SeriesButton asChild size="lg" className="bg-gradient-to-r from-primary to-accent text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             <Link to="/create">
-              <Sparkles className="mr-2 h-5 w-5" />
+              <SparklesIcon className="mr-2 h-5 w-5" />
               Make a clip
             </Link>
           </SeriesButton>
           <SeriesButton asChild variant="outline" size="lg" className="border-border/50 hover:bg-muted/50">
             <a href="#how">
-              See how it works <ArrowDown className="ml-2 h-4 w-4" />
+              See how it works <ArrowDownIcon className="ml-2 h-4 w-4" />
             </a>
           </SeriesButton>
         </motion.div>

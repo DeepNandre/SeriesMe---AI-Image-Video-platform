@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/motion';
-import { Sparkles, ArrowRight, Zap } from 'lucide-react';
+import { SparklesIcon, ArrowRightIcon, BoltIcon } from '@heroicons/react/24/outline';
 
 const CTA = () => {
   return (
@@ -30,7 +30,7 @@ const CTA = () => {
               viewport={{ once: true, amount: 0.3 }}
             >
               <Badge variant="secondary" className="px-4 py-2 text-sm font-medium">
-                <Sparkles className="w-3 h-3 mr-2" />
+                <SparklesIcon className="w-3 h-3 mr-2" />
                 Ready to create?
               </Badge>
               
@@ -60,14 +60,14 @@ const CTA = () => {
                 className="bg-gradient-to-r from-primary to-accent text-white font-black text-xl py-6 px-8 rounded-2xl shadow-2xl hover:scale-105 transition-all duration-300 group"
               >
                 <Link to="/create">
-                  <Sparkles className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" />
+                  <SparklesIcon className="mr-2 h-6 w-6 group-hover:rotate-12 transition-transform" />
                   Open Generator
-                  <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRightIcon className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </SeriesButton>
               
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Zap className="h-4 w-4 text-accent" />
+                <BoltIcon className="h-4 w-4 text-accent" />
                 <span>30 seconds to viral</span>
               </div>
             </motion.div>
