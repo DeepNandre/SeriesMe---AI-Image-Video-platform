@@ -163,7 +163,7 @@ const Create = () => {
         </div>
 
           {state === 'ready' && generationData.videoUrl ? (
-            /* Preview Screen */
+            {/* Preview Screen */}
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-bold mb-2">Your video is ready!</h2>
@@ -189,7 +189,7 @@ const Create = () => {
               </SeriesButton>
             </div>
           ) : isGenerating ? (
-            /* Progress Screen */
+            {/* Progress Screen */}
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-bold mb-2">Creating your video...</h2>
@@ -213,7 +213,7 @@ const Create = () => {
               </SeriesButton>
             </div>
           ) : (
-            /* Upload Form */
+            {/* Upload Form */}
             <div className="space-y-10">
               {/* Upload Selfie */}
               <div className="relative">
