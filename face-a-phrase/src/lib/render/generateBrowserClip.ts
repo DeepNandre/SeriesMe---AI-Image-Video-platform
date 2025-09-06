@@ -49,27 +49,38 @@ export async function generateBrowserClip(
   }
 
   try {
+    console.log('🎨 Starting browser video generation...', { text, hasAudio: !!audioBlob });
+    
     // Load selfie image
+    console.log('📸 Loading selfie image...');
     const selfieImage = await loadImageFromFile(selfieFile);
+    console.log('✅ Selfie loaded:', { width: selfieImage.width, height: selfieImage.height });
     
     // Calculate duration based on audio or text length
     let duration: number;
     let audioUrl: string | undefined;
     
     if (audioBlob) {
+      console.log('🎵 Getting audio duration...');
       duration = await getAudioDuration(audioBlob);
       audioUrl = URL.createObjectURL(audioBlob);
+      console.log('✅ Audio duration:', duration);
     } else {
       duration = estimateAudioDuration(text, 120); // 120 WPM for reading
+      console.log('📝 Estimated duration from text:', duration);
     }
     
     // Cap duration
     duration = Math.min(duration, opts.maxDuration);
+    console.log('⏱️ Final duration:', duration);
     
     // Generate captions
+    console.log('📝 Generating captions...');
     const captions = CanvasComposer.generateCaptions(text, duration);
+    console.log('✅ Captions generated:', captions.length);
     
     // Create video
+    console.log('🎬 Creating video with canvas...');
     const { videoBlob, posterBlob } = await createVideoWithCanvas(
       selfieImage,
       duration,
@@ -77,6 +88,7 @@ export async function generateBrowserClip(
       audioUrl,
       opts
     );
+    console.log('✅ Video created:', { videoSize: videoBlob.size, posterSize: posterBlob.size });
 
     // Cleanup object URLs
     if (audioUrl) {
@@ -144,6 +156,13 @@ async function createVideoWithCanvas(
   options: BrowserClipOptions
 ): Promise<{ videoBlob: Blob; posterBlob: Blob }> {
   
+  console.log('🎨 Creating CanvasComposer...', { 
+    width: options.width, 
+    height: options.height, 
+    fps: options.fps,
+    duration 
+  });
+  
   const composer = new CanvasComposer({
     width: options.width,
     height: options.height,
@@ -152,8 +171,13 @@ async function createVideoWithCanvas(
     watermarkText: options.watermarkText
   });
 
+  console.log('📹 Getting video stream from canvas...');
   // Get video stream from canvas
   const videoStream = composer.captureStream(options.fps);
+  console.log('✅ Video stream created:', { 
+    videoTracks: videoStream.getVideoTracks().length,
+    audioTracks: videoStream.getAudioTracks().length 
+  });
   
   // Add audio track if provided
   let finalStream = videoStream;
@@ -180,6 +204,8 @@ async function createVideoWithCanvas(
 
   // Set up MediaRecorder
   const mimeType = getSupportedMimeType();
+  console.log('🎥 Setting up MediaRecorder with mimeType:', mimeType);
+  
   const mediaRecorder = new MediaRecorder(finalStream, {
     mimeType,
     videoBitsPerSecond: 2500000 // 2.5 Mbps for good quality
@@ -191,32 +217,41 @@ async function createVideoWithCanvas(
     mediaRecorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
         chunks.push(event.data);
+        console.log('📦 Data chunk received:', event.data.size, 'bytes');
       }
     };
 
     mediaRecorder.onstop = async () => {
       try {
+        console.log('🛑 MediaRecorder stopped, processing chunks...', chunks.length);
         const videoBlob = new Blob(chunks, { type: mimeType });
+        console.log('✅ Video blob created:', videoBlob.size, 'bytes');
         
         // Generate poster by drawing current frame
+        console.log('🖼️ Generating poster...');
         await composer.drawFrame(image, duration * 0.3, duration, captions); // 30% through
         const posterBlob = await canvasToBlob(composer.getCanvas(), 'image/jpeg', 0.9);
+        console.log('✅ Poster blob created:', posterBlob.size, 'bytes');
         
         // Cleanup
         composer.dispose();
         finalStream.getTracks().forEach(track => track.stop());
         
+        console.log('🎉 Video generation complete!');
         resolve({ videoBlob, posterBlob });
       } catch (error) {
+        console.error('❌ Error in onstop:', error);
         reject(error);
       }
     };
 
     mediaRecorder.onerror = (event) => {
+      console.error('❌ MediaRecorder error:', event);
       reject(new Error(`MediaRecorder error: ${event}`));
     };
 
     // Start recording
+    console.log('▶️ Starting MediaRecorder...');
     mediaRecorder.start(100); // Collect data every 100ms
 
     // Animate frames
@@ -224,15 +259,22 @@ async function createVideoWithCanvas(
     const fps = options.fps || 30;
     const frameInterval = 1000 / fps;
     
+    console.log('🎬 Starting animation loop...', { fps, frameInterval, duration });
+    
     const animateFrame = async () => {
       const elapsed = (Date.now() - startTime) / 1000;
       
       if (elapsed >= duration) {
+        console.log('🏁 Animation complete, stopping MediaRecorder...');
         mediaRecorder.stop();
         return;
       }
 
-      await composer.drawFrame(image, elapsed, duration, captions);
+      try {
+        await composer.drawFrame(image, elapsed, duration, captions);
+      } catch (error) {
+        console.error('❌ Error drawing frame:', error);
+      }
       
       setTimeout(animateFrame, frameInterval);
     };

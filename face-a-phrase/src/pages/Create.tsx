@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
 import { SeriesButton } from '@/components/SeriesButton';
 import UploadDropzone from '@/components/UploadDropzone';
 import { SeriesTextArea } from '@/components/SeriesTextArea';
@@ -25,11 +26,15 @@ interface GenerationData {
 
 const Create = () => {
   const { toast } = useToast();
+  const { user, isLoaded } = useUser();
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [script, setScript] = useState('');
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState<GenerationState>('idle');
   const [generationData, setGenerationData] = useState<GenerationData>({});
+
+  // Debug auth state
+  console.log('🔐 Auth state:', { isLoaded, user: !!user, authEnabled: FLAGS.AUTH_ENABLED });
 
   const canGenerate = selfieFile && script.trim() && script.length <= 200 && consent;
 
@@ -44,6 +49,14 @@ const Create = () => {
   const handleGenerate = async () => {
     if (!canGenerate) return;
 
+    console.log('🚀 Starting video generation...', { 
+      script, 
+      hasFile: !!selfieFile, 
+      consent,
+      authEnabled: FLAGS.AUTH_ENABLED,
+      user: !!user 
+    });
+
     setState('uploading');
     
     try {
@@ -55,29 +68,46 @@ const Create = () => {
 
       const { generateClip } = await import('@/lib/api');
       const { jobId } = await generateClip(formData);
+      
+      console.log('✅ Generation started:', { jobId });
+      
       setGenerationData({ jobId });
       setState('queued');
 
       // Start polling for status
       pollStatus(jobId);
     } catch (error) {
+      console.error('❌ Generation failed:', error);
       setState('error');
       const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Try again or tweak your selfie/script.';
       setGenerationData({ error: errorMessage });
+      
+      toast({
+        title: "Generation failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
   const pollStatus = async (jobId: string) => {
     try {
+      console.log('🔄 Polling status for job:', jobId);
+      
       const { pollStatus, getFinalResult } = await import('@/lib/api');
       const data = await pollStatus(jobId);
+
+      console.log('📊 Status update:', data);
 
       setGenerationData(prev => ({ ...prev, ...data }));
 
       if (data.status === 'ready') {
+        console.log('✅ Video generation complete!');
         setState('ready');
         // Get final result
         const result = await getFinalResult(jobId);
+        console.log('🎬 Final result:', result);
+        
         setGenerationData(prev => ({ ...prev, videoUrl: result.videoUrl, posterUrl: result.posterUrl, duration: result.durationSec }));
         
         toast({
@@ -85,17 +115,32 @@ const Create = () => {
           description: "Your talking-head clip is ready to download.",
         });
       } else if (data.status === 'error') {
+        console.error('❌ Generation error:', data.error);
         setState('error');
         setGenerationData(prev => ({ ...prev, error: data.error || 'Generation failed' }));
+        
+        toast({
+          title: "Generation failed",
+          description: data.error || 'Generation failed',
+          variant: "destructive",
+        });
       } else {
+        console.log('⏳ Status:', data.status, 'Progress:', data.progress);
         setState(data.status);
         // Continue polling
         setTimeout(() => pollStatus(jobId), 2000);
       }
     } catch (error) {
+      console.error('❌ Polling error:', error);
       setState('error');
       const errorMessage = error instanceof Error ? error.message : 'Connection lost. Please try again.';
       setGenerationData({ error: errorMessage });
+      
+      toast({
+        title: "Connection error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 

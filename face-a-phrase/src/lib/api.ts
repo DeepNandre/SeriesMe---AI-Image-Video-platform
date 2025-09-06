@@ -140,6 +140,8 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     const selfieFile = formData.get('selfie') as File;
     const script = formData.get('script') as string;
     
+    console.log('🎬 Starting browser video generation...', { jobId, script });
+    
     // Stage 1: Processing
     job.status = 'processing';
     job.progress = 25;
@@ -147,7 +149,7 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     browserJobs.set(jobId, job);
 
     // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Stage 2: Assembling  
     job.status = 'assembling';
@@ -155,8 +157,16 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     job.etaSeconds = 5;
     browserJobs.set(jobId, job);
 
+    console.log('🎨 Generating browser video with Canvas API...');
+    
     // Generate the actual video
     const result = await generateBrowserClip(selfieFile, script);
+    
+    console.log('✅ Browser video generation complete!', { 
+      duration: result.duration, 
+      format: result.format,
+      size: result.videoBlob.size 
+    });
 
     // Complete
     job.status = 'ready';
@@ -175,6 +185,7 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     }, 5 * 60 * 1000);
 
   } catch (error) {
+    console.error('❌ Browser video generation failed:', error);
     job.status = 'error';
     job.error = error instanceof Error ? error.message : 'Video generation failed';
     browserJobs.set(jobId, job);
