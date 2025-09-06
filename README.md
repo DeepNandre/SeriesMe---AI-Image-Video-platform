@@ -1,4 +1,4 @@
-# SeriesMe---AI-Image-Video-platform
+# SeriesMe: AI-Image-Video-platform
 
 ## Backend (FastAPI) — local run
 ## SeriesMe — AI Image → Video (Lite)
