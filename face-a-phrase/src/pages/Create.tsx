@@ -91,9 +91,9 @@ const Create = () => {
     }
   };
 
-  const pollStatus = async (jobId: string) => {
+  const pollStatus = async (jobId: string, pollCount = 0) => {
     try {
-      console.log('🔄 Polling status for job:', jobId);
+      console.log('🔄 Polling status for job:', jobId, `(attempt ${pollCount + 1})`);
       
       const { pollStatus, getFinalResult } = await import('@/lib/api');
       const data = await pollStatus(jobId);
@@ -157,8 +157,20 @@ const Create = () => {
       } else {
         console.log('⏳ Status:', data.status, 'Progress:', data.progress);
         setState(data.status);
-        // Continue polling
-        setTimeout(() => pollStatus(jobId), 2000);
+        
+        // Continue polling with timeout protection
+        if (pollCount < 60) { // Max 2 minutes of polling
+          setTimeout(() => pollStatus(jobId, pollCount + 1), 2000);
+        } else {
+          console.error('⏰ Polling timeout reached');
+          setState('error');
+          setGenerationData(prev => ({ ...prev, error: 'Generation timeout - please try again' }));
+          toast({
+            title: "Generation timeout",
+            description: "The video generation took too long. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('❌ Polling error:', error);

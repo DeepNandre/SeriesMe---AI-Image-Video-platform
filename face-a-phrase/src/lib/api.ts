@@ -168,29 +168,41 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
       size: result.videoBlob.size 
     });
 
-    // Complete
-    job.status = 'ready';
-    job.progress = 100;
-    job.etaSeconds = 0;
-    job.result = result;
-    browserJobs.set(jobId, job);
-
-    console.log('🎉 Job marked as ready in browserJobs:', jobId);
+    // Complete - Update the job object directly
+    const updatedJob = browserJobs.get(jobId);
+    if (updatedJob) {
+      updatedJob.status = 'ready';
+      updatedJob.progress = 100;
+      updatedJob.etaSeconds = 0;
+      updatedJob.result = result;
+      browserJobs.set(jobId, updatedJob);
+      
+      console.log('🎉 Job marked as ready in browserJobs:', jobId);
+      console.log('🔍 Final job state:', { 
+        status: updatedJob.status, 
+        progress: updatedJob.progress, 
+        hasResult: !!updatedJob.result 
+      });
+    }
 
     // Auto-cleanup after 5 minutes
     setTimeout(() => {
-      if (job.result) {
-        URL.revokeObjectURL(job.result.videoBlob as any);
-        URL.revokeObjectURL(job.result.posterBlob as any);
+      const cleanupJob = browserJobs.get(jobId);
+      if (cleanupJob?.result) {
+        URL.revokeObjectURL(cleanupJob.result.videoBlob as any);
+        URL.revokeObjectURL(cleanupJob.result.posterBlob as any);
       }
       browserJobs.delete(jobId);
     }, 5 * 60 * 1000);
 
   } catch (error) {
     console.error('❌ Browser video generation failed:', error);
-    job.status = 'error';
-    job.error = error instanceof Error ? error.message : 'Video generation failed';
-    browserJobs.set(jobId, job);
+    const errorJob = browserJobs.get(jobId);
+    if (errorJob) {
+      errorJob.status = 'error';
+      errorJob.error = error instanceof Error ? error.message : 'Video generation failed';
+      browserJobs.set(jobId, errorJob);
+    }
   }
 }
 
