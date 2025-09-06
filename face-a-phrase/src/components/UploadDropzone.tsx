@@ -121,7 +121,8 @@ export default function UploadDropzone({
               </div>
               <button
                 onClick={clearFile}
-                className="ml-2 p-1 hover:bg-muted rounded-full transition-colors"
+                className="ml-2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label={`Remove ${selectedFile.name}`}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -135,7 +136,8 @@ export default function UploadDropzone({
               </div>
               <button
                 onClick={() => setError(null)}
-                className="ml-2 p-1 hover:bg-muted rounded-full transition-colors"
+                className="ml-2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-label="Dismiss error"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -154,8 +156,8 @@ export default function UploadDropzone({
               </div>
               <button
                 type="button"
-                className="mt-2 inline-flex items-center justify-center rounded-md px-3 py-2 bg-white/10 hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
-                onClick={() => {}}
+                className="mt-2 inline-flex items-center justify-center rounded-md px-3 py-2 bg-white/10 hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                onClick={() => document.querySelector('input[type="file"]')?.click()}
                 aria-label="Open file picker"
               >
                 Choose file

@@ -9,6 +9,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { useToast } from '@/hooks/use-toast';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
+import { FLAGS } from '@/lib/flags';
 
 type GenerationState = 'idle' | 'validating' | 'uploading' | 'queued' | 'processing' | 'assembling' | 'ready' | 'error';
 
@@ -233,6 +234,22 @@ const Create = () => {
           </div>
           <p className="text-sm text-muted-foreground">Personal use only • Consent required • Visible watermark • No public figures</p>
         </div>
+        
+        {FLAGS.USE_BROWSER_RENDERER && (
+          <div className="rounded-2xl p-4 border border-green-500/20 bg-green-500/5">
+            <div className="flex items-center space-x-3 mb-2">
+              <span className="text-lg">🌐</span>
+              <p className="font-semibold text-green-600">Free Browser Mode</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Your video is processed directly in your browser for maximum privacy. 
+              {FLAGS.ENABLE_TTS_ELEVENLABS 
+                ? ' Premium TTS enabled.' 
+                : ' WebM format • Add TTS API key for professional audio.'
+              }
+            </p>
+          </div>
+        )}
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent rounded-2xl blur-md group-hover:blur-lg transition-all duration-300 opacity-75"></div>
           <SeriesButton

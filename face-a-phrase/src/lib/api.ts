@@ -1,5 +1,7 @@
 // Production API client for SeriesMe backend
 import { z } from 'zod';
+import { FLAGS } from './flags';
+import { generateBrowserClip, BrowserClipResult } from './render/generateBrowserClip';
 
 // For Netlify-only deployment, use relative paths to hit Netlify Functions
 // Set VITE_API_BASE_URL only if using external backend
@@ -88,10 +90,39 @@ function validateGenerateInput(formData: FormData): void {
 }
 
 // Production API functions
+// Browser rendering storage for simulated jobs
+const browserJobs = new Map<string, {
+  status: Status;
+  progress: number;
+  etaSeconds: number;
+  createdAt: number;
+  result?: BrowserClipResult;
+  error?: string;
+}>();
+
 export async function generateClip(formData: FormData): Promise<GenerateResponse> {
   // Client-side validation
   validateGenerateInput(formData);
   
+  if (FLAGS.USE_BROWSER_RENDERER) {
+    // Browser-based rendering
+    const jobId = `browser_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    
+    // Store initial job
+    browserJobs.set(jobId, {
+      status: 'queued',
+      progress: 0,
+      etaSeconds: 15,
+      createdAt: Date.now()
+    });
+    
+    // Start background processing
+    processBrowserJob(jobId, formData);
+    
+    return { jobId };
+  }
+  
+  // Server-side rendering
   const url = `${API_BASE}/api/generate`;
   const response = await fetch(url, {
     method: 'POST',
@@ -101,11 +132,76 @@ export async function generateClip(formData: FormData): Promise<GenerateResponse
   return handleResponse(response, GenerateResponseSchema);
 }
 
+async function processBrowserJob(jobId: string, formData: FormData): Promise<void> {
+  const job = browserJobs.get(jobId);
+  if (!job) return;
+
+  try {
+    const selfieFile = formData.get('selfie') as File;
+    const script = formData.get('script') as string;
+    
+    // Stage 1: Processing
+    job.status = 'processing';
+    job.progress = 25;
+    job.etaSeconds = 10;
+    browserJobs.set(jobId, job);
+
+    // Simulate some processing time
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Stage 2: Assembling  
+    job.status = 'assembling';
+    job.progress = 75;
+    job.etaSeconds = 5;
+    browserJobs.set(jobId, job);
+
+    // Generate the actual video
+    const result = await generateBrowserClip(selfieFile, script);
+
+    // Complete
+    job.status = 'ready';
+    job.progress = 100;
+    job.etaSeconds = 0;
+    job.result = result;
+    browserJobs.set(jobId, job);
+
+    // Auto-cleanup after 5 minutes
+    setTimeout(() => {
+      if (job.result) {
+        URL.revokeObjectURL(job.result.videoBlob as any);
+        URL.revokeObjectURL(job.result.posterBlob as any);
+      }
+      browserJobs.delete(jobId);
+    }, 5 * 60 * 1000);
+
+  } catch (error) {
+    job.status = 'error';
+    job.error = error instanceof Error ? error.message : 'Video generation failed';
+    browserJobs.set(jobId, job);
+  }
+}
+
 export async function pollStatus(jobId: string): Promise<StatusResponse> {
   if (!jobId) {
     throw new APIError('Job ID is required');
   }
   
+  // Browser job
+  if (jobId.startsWith('browser_')) {
+    const job = browserJobs.get(jobId);
+    if (!job) {
+      throw new APIError('Job not found');
+    }
+    
+    return {
+      status: job.status,
+      progress: job.progress,
+      etaSeconds: job.etaSeconds,
+      ...(job.error && { error: job.error })
+    };
+  }
+  
+  // Server job
   const url = `${API_BASE}/api/status?jobId=${encodeURIComponent(jobId)}`;
   const response = await fetch(url);
   
@@ -117,6 +213,31 @@ export async function getFinalResult(jobId: string): Promise<ResultResponse> {
     throw new APIError('Job ID is required');
   }
   
+  // Browser job
+  if (jobId.startsWith('browser_')) {
+    const job = browserJobs.get(jobId);
+    if (!job) {
+      throw new APIError('Job not found');
+    }
+    
+    if (job.status !== 'ready' || !job.result) {
+      throw new APIError('Video not ready yet');
+    }
+    
+    // Create object URLs for the blobs
+    const videoUrl = URL.createObjectURL(job.result.videoBlob);
+    const posterUrl = URL.createObjectURL(job.result.posterBlob);
+    
+    return {
+      videoUrl,
+      posterUrl,
+      durationSec: job.result.duration,
+      width: job.result.width,
+      height: job.result.height
+    };
+  }
+  
+  // Server job
   const url = `${API_BASE}/api/result?jobId=${encodeURIComponent(jobId)}`;
   const response = await fetch(url);
   

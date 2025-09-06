@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useOnline } from './lib/useOnline';
+import { useOnlineStatus } from './lib/useOnline';
 import { ThemeProvider } from './components/ThemeProvider';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
@@ -15,11 +15,11 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function OnlineBanner(){
-  const online = useOnline();
-  if (online) return null;
+  const { isOffline } = useOnlineStatus();
+  if (!isOffline) return null;
   return (
-    <div className="fixed top-0 inset-x-0 z-50 text-center text-xs py-2 bg-black/70 text-white">
-      Offline — some features may be unavailable
+    <div className="fixed top-0 inset-x-0 z-50 text-center text-xs py-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm">
+      🔌 Offline — Browser-based features still work, but cloud services may be unavailable
     </div>
   );
 }
