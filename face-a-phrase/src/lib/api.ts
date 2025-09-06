@@ -175,6 +175,8 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     job.result = result;
     browserJobs.set(jobId, job);
 
+    console.log('🎉 Job marked as ready in browserJobs:', jobId);
+
     // Auto-cleanup after 5 minutes
     setTimeout(() => {
       if (job.result) {
@@ -203,6 +205,8 @@ export async function pollStatus(jobId: string): Promise<StatusResponse> {
     if (!job) {
       throw new APIError('Job not found');
     }
+    
+    console.log('🔍 Polling browser job:', { jobId, status: job.status, progress: job.progress, hasResult: !!job.result });
     
     return {
       status: job.status,

@@ -99,6 +99,7 @@ const Create = () => {
       const data = await pollStatus(jobId);
 
       console.log('📊 Status update:', data);
+      console.log('🔍 Current job status check:', { status: data.status, progress: data.progress, isReady: data.status === 'ready' });
 
       setGenerationData(prev => ({ ...prev, ...data }));
 
