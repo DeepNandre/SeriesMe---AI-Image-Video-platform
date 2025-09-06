@@ -310,8 +310,8 @@ const Create = () => {
             </div>
           )}
         </div>
+        <Footer />
       </div>
-      <Footer />
     </div>
   );
 };
