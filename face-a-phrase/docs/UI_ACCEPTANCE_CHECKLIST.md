@@ -7,6 +7,8 @@
 - Download button triggers file download (mock URL OK)
 - Library lists saved items and supports Download/Delete/Duplicate
 - Keyboard-only path works; tab order logical; progress announced via ARIA live region
+- UploadDropzone shows validation errors and has visible focus ring
+- Offline banner appears when offline
 - Dark mode legible; focus rings visible; controls ≥ 48px touch target
 
 How to test locally:

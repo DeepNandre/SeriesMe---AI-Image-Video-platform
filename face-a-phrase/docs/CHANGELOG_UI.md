@@ -10,5 +10,7 @@
 - feat(ui): add minimal IndexedDB helpers (`src/lib/idb.ts`)
 - fix(ui): a11y improvements (aria-live on progress, labeled consent checkbox)
 - perf(ui): preload video metadata in `VideoPlayer`
+ - feat(a11y): aria-live status; focus rings; library buttons keyboardable; reduced-motion
+ - fix(ux): UploadDropzone validation errors; preview watermark overlay; offline banner
 
 

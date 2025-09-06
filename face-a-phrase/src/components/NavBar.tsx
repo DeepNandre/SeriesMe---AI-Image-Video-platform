@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 export default function NavBar(){
   const [scrolled, setScrolled] = useState(false);
@@ -18,6 +19,7 @@ export default function NavBar(){
           <a href="/about" className="hover:opacity-80">About</a>
           <a href="/privacy" className="hover:opacity-80">Privacy</a>
           <a href="/create" className="px-3 py-1.5 rounded-full text-white bg-[var(--primary)] hover:opacity-90">Make a clip</a>
+          <ThemeToggle />
         </div>
       </nav>
     </header>
