@@ -37,6 +37,7 @@ const Create = () => {
 
   // Debug auth state
   console.log('🔐 Auth state:', { isLoaded, user: !!user, authEnabled: FLAGS.AUTH_ENABLED });
+  console.log('📅 SeriesMe deployment timestamp:', new Date().toISOString());
 
   const canGenerate = selfieFile && script.trim() && script.length <= 200 && consent;
 
