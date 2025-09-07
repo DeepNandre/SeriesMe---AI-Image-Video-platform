@@ -272,7 +272,7 @@ const Create = () => {
           <p className="text-muted-foreground">This usually takes 2-3 minutes</p>
         </div>
         <ProgressStepper
-          currentStage={state as any}
+          currentStage={state as 'uploading' | 'queued' | 'processing' | 'assembling' | 'ready' | 'error'}
           progress={generationData.progress}
           etaSeconds={generationData.etaSeconds}
           error={generationData.error}

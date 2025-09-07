@@ -72,18 +72,23 @@ export class CanvasComposer {
     totalDuration: number,
     captions: Caption[]
   ): Promise<void> {
-    // Clear canvas
-    this.ctx.fillStyle = this.options.backgroundColor;
-    this.ctx.fillRect(0, 0, this.options.width, this.options.height);
+    try {
+      // Clear canvas
+      this.ctx.fillStyle = this.options.backgroundColor;
+      this.ctx.fillRect(0, 0, this.options.width, this.options.height);
 
-    // Draw image with Ken Burns effect
-    await this.drawImageWithKenBurns(image, currentTime, totalDuration);
+      // Draw image with Ken Burns effect
+      await this.drawImageWithKenBurns(image, currentTime, totalDuration);
 
-    // Draw captions
-    this.drawCaptions(captions, currentTime);
+      // Draw captions
+      this.drawCaptions(captions, currentTime);
 
-    // Draw watermark
-    this.drawWatermark();
+      // Draw watermark
+      this.drawWatermark();
+    } catch (error) {
+      console.error('❌ Error in drawFrame:', error);
+      throw new Error(`Canvas drawing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private async drawImageWithKenBurns(
@@ -91,41 +96,52 @@ export class CanvasComposer {
     currentTime: number,
     totalDuration: number
   ): Promise<void> {
-    const progress = totalDuration > 0 ? currentTime / totalDuration : 0;
-    
-    // Calculate image dimensions to fit canvas while maintaining aspect ratio
-    const canvasAspect = this.options.width / this.options.height;
-    const imageAspect = image.width / image.height;
-    
-    let drawWidth, drawHeight;
-    if (imageAspect > canvasAspect) {
-      // Image is wider - fit to height
-      drawHeight = this.options.height;
-      drawWidth = drawHeight * imageAspect;
-    } else {
-      // Image is taller - fit to width  
-      drawWidth = this.options.width;
-      drawHeight = drawWidth / imageAspect;
-    }
+    try {
+      const progress = totalDuration > 0 ? currentTime / totalDuration : 0;
+      
+      // Validate image is loaded
+      if (!image.complete || image.naturalWidth === 0) {
+        console.warn('⚠️ Image not fully loaded, skipping frame');
+        return;
+      }
+      
+      // Calculate image dimensions to fit canvas while maintaining aspect ratio
+      const canvasAspect = this.options.width / this.options.height;
+      const imageAspect = image.width / image.height;
+      
+      let drawWidth, drawHeight;
+      if (imageAspect > canvasAspect) {
+        // Image is wider - fit to height
+        drawHeight = this.options.height;
+        drawWidth = drawHeight * imageAspect;
+      } else {
+        // Image is taller - fit to width  
+        drawWidth = this.options.width;
+        drawHeight = drawWidth / imageAspect;
+      }
 
-    if (this.options.kenBurnsEffect) {
-      // Ken Burns: gentle zoom and pan
-      const zoomFactor = 1 + (progress * 0.2); // Zoom from 1x to 1.2x
-      const panX = (progress - 0.5) * 100; // Pan horizontally
-      const panY = (progress - 0.5) * 50; // Pan vertically (less)
+      if (this.options.kenBurnsEffect) {
+        // Ken Burns: gentle zoom and pan
+        const zoomFactor = 1 + (progress * 0.2); // Zoom from 1x to 1.2x
+        const panX = (progress - 0.5) * 100; // Pan horizontally
+        const panY = (progress - 0.5) * 50; // Pan vertically (less)
 
-      drawWidth *= zoomFactor;
-      drawHeight *= zoomFactor;
+        drawWidth *= zoomFactor;
+        drawHeight *= zoomFactor;
 
-      const x = (this.options.width - drawWidth) / 2 + panX;
-      const y = (this.options.height - drawHeight) / 2 + panY;
+        const x = (this.options.width - drawWidth) / 2 + panX;
+        const y = (this.options.height - drawHeight) / 2 + panY;
 
-      this.ctx.drawImage(image, x, y, drawWidth, drawHeight);
-    } else {
-      // Static centered image
-      const x = (this.options.width - drawWidth) / 2;
-      const y = (this.options.height - drawHeight) / 2;
-      this.ctx.drawImage(image, x, y, drawWidth, drawHeight);
+        this.ctx.drawImage(image, x, y, drawWidth, drawHeight);
+      } else {
+        // Static centered image
+        const x = (this.options.width - drawWidth) / 2;
+        const y = (this.options.height - drawHeight) / 2;
+        this.ctx.drawImage(image, x, y, drawWidth, drawHeight);
+      }
+    } catch (error) {
+      console.error('❌ Error drawing image:', error);
+      throw error;
     }
   }
 

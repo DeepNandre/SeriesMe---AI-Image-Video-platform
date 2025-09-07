@@ -189,8 +189,8 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     setTimeout(() => {
       const cleanupJob = browserJobs.get(jobId);
       if (cleanupJob?.result) {
-        URL.revokeObjectURL(cleanupJob.result.videoBlob as any);
-        URL.revokeObjectURL(cleanupJob.result.posterBlob as any);
+        URL.revokeObjectURL(cleanupJob.result.videoBlob as unknown as string);
+        URL.revokeObjectURL(cleanupJob.result.posterBlob as unknown as string);
       }
       browserJobs.delete(jobId);
     }, 5 * 60 * 1000);
@@ -215,10 +215,20 @@ export async function pollStatus(jobId: string): Promise<StatusResponse> {
   if (jobId.startsWith('browser_')) {
     const job = browserJobs.get(jobId);
     if (!job) {
+      console.error('❌ Job not found in browserJobs:', jobId);
+      console.log('📋 Available jobs:', Array.from(browserJobs.keys()));
       throw new APIError('Job not found');
     }
     
-    console.log('🔍 Polling browser job:', { jobId, status: job.status, progress: job.progress, hasResult: !!job.result });
+    console.log('🔍 Polling browser job:', { 
+      jobId, 
+      status: job.status, 
+      progress: job.progress, 
+      etaSeconds: job.etaSeconds,
+      hasResult: !!job.result,
+      createdAt: new Date(job.createdAt).toISOString(),
+      ageSeconds: Math.floor((Date.now() - job.createdAt) / 1000)
+    });
     
     return {
       status: job.status,

@@ -261,19 +261,30 @@ async function createVideoWithCanvas(
     
     console.log('🎬 Starting animation loop...', { fps, frameInterval, duration });
     
+    let frameCount = 0;
+    const totalFrames = Math.ceil(duration * fps);
+    
     const animateFrame = async () => {
       const elapsed = (Date.now() - startTime) / 1000;
       
-      if (elapsed >= duration) {
-        console.log('🏁 Animation complete, stopping MediaRecorder...');
+      if (elapsed >= duration || frameCount >= totalFrames) {
+        console.log('🏁 Animation complete, stopping MediaRecorder...', { elapsed, duration, frameCount, totalFrames });
         mediaRecorder.stop();
         return;
       }
 
       try {
         await composer.drawFrame(image, elapsed, duration, captions);
+        frameCount++;
+        
+        if (frameCount % 30 === 0) { // Log every 30 frames (~1 second)
+          console.log(`📹 Frame ${frameCount}/${totalFrames} (${elapsed.toFixed(1)}s)`);
+        }
       } catch (error) {
         console.error('❌ Error drawing frame:', error);
+        mediaRecorder.stop();
+        reject(error);
+        return;
       }
       
       setTimeout(animateFrame, frameInterval);
