@@ -440,16 +440,24 @@ const Create = () => {
         </div>
         
         {FLAGS.USE_BROWSER_RENDERER && (
-          <div className="rounded-2xl p-4 border border-green-500/20 bg-green-500/5">
+          <div className={`rounded-2xl p-4 border ${FLAGS.USE_AI_GENERATION 
+            ? 'border-blue-500/20 bg-blue-500/5' 
+            : 'border-green-500/20 bg-green-500/5'
+          }`}>
             <div className="flex items-center space-x-3 mb-2">
-              <span className="text-lg">🌐</span>
-              <p className="font-semibold text-green-600">Free Browser Mode</p>
+              <span className="text-lg">{FLAGS.USE_AI_GENERATION ? '🤖' : '🌐'}</span>
+              <p className={`font-semibold ${FLAGS.USE_AI_GENERATION ? 'text-blue-600' : 'text-green-600'}`}>
+                {FLAGS.USE_AI_GENERATION ? 'AI Talking-Head Mode' : 'Free Browser Mode'}
+              </p>
             </div>
             <p className="text-sm text-muted-foreground">
-              Your video is processed directly in your browser for maximum privacy. 
+              {FLAGS.USE_AI_GENERATION 
+                ? 'AI-powered voice synthesis and face animation for realistic talking-head videos.'
+                : 'Your video is processed directly in your browser for maximum privacy.'
+              }
               {FLAGS.ENABLE_TTS_ELEVENLABS 
                 ? ' Premium TTS enabled.' 
-                : ' WebM format • Add TTS API key for professional audio.'
+                : ' • Add TTS API key for professional audio.'
               }
             </p>
           </div>

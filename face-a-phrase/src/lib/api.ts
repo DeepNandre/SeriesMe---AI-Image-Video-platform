@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { FLAGS } from './flags';
 import { generateBrowserClip, BrowserClipResult } from './render/generateBrowserClip';
+import { modelRouter } from './ai/ModelRouter';
 
 // For Netlify-only deployment, use relative paths to hit Netlify Functions
 // Set VITE_API_BASE_URL only if using external backend
@@ -90,6 +91,79 @@ function validateGenerateInput(formData: FormData): void {
 }
 
 // Production API functions
+// AI Talking-Head Generation Function
+async function generateAITalkingHead(selfieFile: File, script: string): Promise<BrowserClipResult> {
+  console.log('🤖 Starting AI talking-head generation pipeline...');
+  
+  try {
+    // Step 1: Generate TTS audio from script
+    console.log('🎤 Generating voice audio with AI...');
+    const audioBlob = await modelRouter.generateTTS(script, {
+      voice: 'default',
+      speed: 1.0,
+      pitch: 1.0
+    });
+    console.log('✅ TTS audio generated:', audioBlob.size, 'bytes');
+
+    // Step 2: Convert image file to blob for AI processing
+    const imageBlob = new Blob([await selfieFile.arrayBuffer()], { type: selfieFile.type });
+    
+    // Step 3: Generate face animation with lip sync
+    console.log('🎭 Generating face animation with lip sync...');
+    const videoBlob = await modelRouter.generateFaceAnimation(imageBlob, audioBlob, {
+      resolution: { width: 1080, height: 1920 },
+      fps: 30
+    });
+    console.log('✅ Face animation generated:', videoBlob.size, 'bytes');
+
+    // Step 4: Generate poster/thumbnail
+    console.log('🖼️ Generating video thumbnail...');
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Load and draw the selfie as poster
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = URL.createObjectURL(imageBlob);
+    });
+    
+    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+    const x = (canvas.width - img.width * scale) / 2;
+    const y = (canvas.height - img.height * scale) / 2;
+    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+    
+    const posterBlob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob(resolve!, 'image/jpeg', 0.8);
+    });
+    
+    // Get audio duration for metadata
+    const audioContext = new AudioContext();
+    const audioBuffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+    const duration = audioBuffer.duration;
+    
+    console.log('🎉 AI talking-head generation complete!');
+    
+    return {
+      videoBlob,
+      posterBlob: posterBlob!,
+      duration,
+      width: 1080,
+      height: 1920,
+      format: 'webm'
+    };
+    
+  } catch (error) {
+    console.error('❌ AI generation failed, falling back to Canvas mode:', error);
+    
+    // Fallback to current Canvas-based generation
+    return await generateBrowserClip(selfieFile, script);
+  }
+}
+
 // Browser rendering storage for simulated jobs
 const browserJobs = new Map<string, {
   status: Status;
@@ -157,10 +231,17 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     job.etaSeconds = 5;
     browserJobs.set(jobId, job);
 
-    console.log('🎨 Generating browser video with Canvas API...');
+    let result: BrowserClipResult;
     
-    // Generate the actual video
-    const result = await generateBrowserClip(selfieFile, script);
+    if (FLAGS.USE_AI_GENERATION) {
+      console.log('🎨 Generating AI talking-head video...');
+      // Generate the actual AI video
+      result = await generateAITalkingHead(selfieFile, script);
+    } else {
+      console.log('🎨 Generating browser video with Canvas API...');
+      // Generate the canvas-based video (current implementation)  
+      result = await generateBrowserClip(selfieFile, script);
+    }
     
     console.log('✅ Browser video generation complete!', { 
       duration: result.duration, 

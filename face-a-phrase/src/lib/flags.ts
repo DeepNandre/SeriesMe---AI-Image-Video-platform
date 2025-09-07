@@ -3,6 +3,7 @@ export const FLAGS = {
   ENABLE_TTS_ELEVENLABS: import.meta.env.VITE_ENABLE_TTS_ELEVENLABS === 'true', // default false
   SHOW_EXPERIMENTAL_BROLL: import.meta.env.VITE_SHOW_EXPERIMENTAL_BROLL === 'true', // default false
   AUTH_ENABLED: import.meta.env.VITE_AUTH_ENABLED === 'true', // default false - optional authentication
+  USE_AI_GENERATION: import.meta.env.VITE_USE_AI_GENERATION === 'true', // default false - use AI instead of Canvas slideshow
 } as const;
 
 export type FlagName = keyof typeof FLAGS;
