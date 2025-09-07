@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
@@ -33,6 +33,7 @@ const Create = () => {
   const [consent, setConsent] = useState(false);
   const [state, setState] = useState<GenerationState>('idle');
   const [generationData, setGenerationData] = useState<GenerationData>({});
+  const pollingActiveRef = useRef<boolean>(false);
 
   // Debug auth state
   console.log('🔐 Auth state:', { isLoaded, user: !!user, authEnabled: FLAGS.AUTH_ENABLED });
@@ -76,6 +77,9 @@ const Create = () => {
       setState('queued');
 
       // Start polling for status - immediate first poll for browser jobs
+      pollingActiveRef.current = true; // Start polling
+      console.log('🟢 Polling activated for job:', jobId);
+      
       if (jobId.startsWith('browser_')) {
         // Browser jobs can complete quickly, poll immediately
         setTimeout(() => pollStatus(jobId), 100);
@@ -97,6 +101,11 @@ const Create = () => {
   };
 
   const pollStatus = async (jobId: string, pollCount = 0) => {
+    if (!pollingActiveRef.current) {
+      console.log('🛑 Polling cancelled - component inactive');
+      return;
+    }
+    
     try {
       console.log('🔄 Polling status for job:', jobId, `(attempt ${pollCount + 1})`);
       
@@ -110,6 +119,7 @@ const Create = () => {
 
       if (data.status === 'ready') {
         console.log('✅ Video generation complete!');
+        pollingActiveRef.current = false; // Stop polling
         setState('ready');
         // Get final result
         const result = await getFinalResult(jobId);
@@ -151,6 +161,7 @@ const Create = () => {
         }
       } else if (data.status === 'error') {
         console.error('❌ Generation error:', data.error);
+        pollingActiveRef.current = false; // Stop polling
         setState('error');
         setGenerationData(prev => ({ ...prev, error: data.error || 'Generation failed' }));
         
@@ -163,12 +174,25 @@ const Create = () => {
         console.log('⏳ Status:', data.status, 'Progress:', data.progress);
         setState(data.status);
         
-        // Continue polling with timeout protection - more frequent for browser jobs
-        if (pollCount < 60) { // Max 2 minutes of polling
-          const pollInterval = jobId.startsWith('browser_') ? 500 : 2000; // 500ms for browser jobs, 2s for server
-          setTimeout(() => pollStatus(jobId, pollCount + 1), pollInterval);
+        // Continue polling with timeout protection - very frequent for browser jobs
+        if (pollCount < 120) { // Max 2 minutes of polling (more attempts for frequent polling)
+          const pollInterval = jobId.startsWith('browser_') ? 250 : 2000; // 250ms for browser jobs, 2s for server
+          console.log(`🔄 Scheduling next poll in ${pollInterval}ms (attempt ${pollCount + 2})`);
+          
+          const timeoutId = setTimeout(() => {
+            console.log(`🔄 Executing scheduled poll attempt ${pollCount + 2}`);
+            try {
+              pollStatus(jobId, pollCount + 1);
+            } catch (error) {
+              console.error('❌ Error in scheduled poll:', error);
+            }
+          }, pollInterval);
+          
+          // Store timeout ID for debugging
+          console.log(`⏰ Created timeout ID:`, timeoutId);
         } else {
           console.error('⏰ Polling timeout reached');
+          pollingActiveRef.current = false; // Stop polling
           setState('error');
           setGenerationData(prev => ({ ...prev, error: 'Generation timeout - please try again' }));
           toast({
@@ -201,11 +225,13 @@ const Create = () => {
   };
 
   const handleCancel = () => {
+    pollingActiveRef.current = false; // Stop polling
     setState('idle');
     setGenerationData({});
   };
 
   const handleReset = () => {
+    pollingActiveRef.current = false; // Stop polling
     setState('idle');
     setSelfieFile(null);
     setScript('');
