@@ -75,8 +75,13 @@ const Create = () => {
       setGenerationData({ jobId });
       setState('queued');
 
-      // Start polling for status
-      pollStatus(jobId);
+      // Start polling for status - immediate first poll for browser jobs
+      if (jobId.startsWith('browser_')) {
+        // Browser jobs can complete quickly, poll immediately
+        setTimeout(() => pollStatus(jobId), 100);
+      } else {
+        pollStatus(jobId);
+      }
     } catch (error) {
       console.error('❌ Generation failed:', error);
       setState('error');
@@ -158,9 +163,10 @@ const Create = () => {
         console.log('⏳ Status:', data.status, 'Progress:', data.progress);
         setState(data.status);
         
-        // Continue polling with timeout protection
+        // Continue polling with timeout protection - more frequent for browser jobs
         if (pollCount < 60) { // Max 2 minutes of polling
-          setTimeout(() => pollStatus(jobId, pollCount + 1), 2000);
+          const pollInterval = jobId.startsWith('browser_') ? 500 : 2000; // 500ms for browser jobs, 2s for server
+          setTimeout(() => pollStatus(jobId, pollCount + 1), pollInterval);
         } else {
           console.error('⏰ Polling timeout reached');
           setState('error');
@@ -174,6 +180,14 @@ const Create = () => {
       }
     } catch (error) {
       console.error('❌ Polling error:', error);
+      
+      // Don't immediately fail on polling errors for browser jobs - they might just be timing issues
+      if (jobId.startsWith('browser_') && pollCount < 10) {
+        console.log('🔄 Retrying browser job poll after error...');
+        setTimeout(() => pollStatus(jobId, pollCount + 1), 1000);
+        return;
+      }
+      
       setState('error');
       const errorMessage = error instanceof Error ? error.message : 'Connection lost. Please try again.';
       setGenerationData({ error: errorMessage });

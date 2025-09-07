@@ -168,20 +168,31 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
       size: result.videoBlob.size 
     });
 
-    // Complete - Update the job object directly
+    // Complete - Update the job object atomically
     const updatedJob = browserJobs.get(jobId);
     if (updatedJob) {
-      updatedJob.status = 'ready';
-      updatedJob.progress = 100;
-      updatedJob.etaSeconds = 0;
-      updatedJob.result = result;
-      browserJobs.set(jobId, updatedJob);
+      const finalJob = {
+        ...updatedJob,
+        status: 'ready' as Status,
+        progress: 100,
+        etaSeconds: 0,
+        result: result
+      };
+      browserJobs.set(jobId, finalJob);
       
       console.log('🎉 Job marked as ready in browserJobs:', jobId);
       console.log('🔍 Final job state:', { 
-        status: updatedJob.status, 
-        progress: updatedJob.progress, 
-        hasResult: !!updatedJob.result 
+        status: finalJob.status, 
+        progress: finalJob.progress, 
+        hasResult: !!finalJob.result 
+      });
+      
+      // Verify the update took effect
+      const verification = browserJobs.get(jobId);
+      console.log('✅ Job state verification:', { 
+        jobId,
+        status: verification?.status, 
+        hasResult: !!verification?.result 
       });
     }
 
@@ -199,9 +210,13 @@ async function processBrowserJob(jobId: string, formData: FormData): Promise<voi
     console.error('❌ Browser video generation failed:', error);
     const errorJob = browserJobs.get(jobId);
     if (errorJob) {
-      errorJob.status = 'error';
-      errorJob.error = error instanceof Error ? error.message : 'Video generation failed';
-      browserJobs.set(jobId, errorJob);
+      const failedJob = {
+        ...errorJob,
+        status: 'error' as Status,
+        error: error instanceof Error ? error.message : 'Video generation failed'
+      };
+      browserJobs.set(jobId, failedJob);
+      console.log('❌ Job marked as failed:', { jobId, error: failedJob.error });
     }
   }
 }
