@@ -49,6 +49,63 @@ const Create = () => {
     });
   }, [toast]);
 
+  const handleJobCompletion = async (jobId: string) => {
+    try {
+      console.log('✅ Video generation complete!');
+      pollingActiveRef.current = false; // Stop polling
+      setState('ready');
+      
+      // Get final result
+      const { getFinalResult } = await import('@/lib/api');
+      const result = await getFinalResult(jobId);
+      console.log('🎬 Final result:', result);
+      
+      setGenerationData(prev => ({ ...prev, videoUrl: result.videoUrl, posterUrl: result.posterUrl, duration: result.durationSec }));
+      
+      // Save to IndexedDB
+      try {
+        console.log('💾 Saving video to library...');
+        const { idbSet } = await import('@/lib/idb');
+        
+        const videoId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const savedVideo = {
+          id: videoId,
+          filename: `seriesme_${new Date().toISOString().split('T')[0]}.webm`,
+          thumbnail: result.posterUrl,
+          duration: result.durationSec,
+          createdAt: new Date(),
+          script: script,
+          videoUrl: result.videoUrl,
+          width: result.width,
+          height: result.height
+        };
+        
+        await idbSet(savedVideo);
+        console.log('✅ Video saved to library:', videoId);
+        
+        toast({
+          title: "Video ready!",
+          description: "Your talking-head clip is ready and saved to your library.",
+        });
+      } catch (error) {
+        console.error('❌ Failed to save video to library:', error);
+        toast({
+          title: "Video ready!",
+          description: "Your talking-head clip is ready to download.",
+        });
+      }
+    } catch (error) {
+      console.error('❌ Job completion failed:', error);
+      setState('error');
+      setGenerationData(prev => ({ ...prev, error: 'Failed to complete video generation' }));
+      toast({
+        title: "Generation failed",
+        description: "Could not complete video generation",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleGenerate = async () => {
     if (!canGenerate) return;
 
@@ -106,9 +163,32 @@ const Create = () => {
       console.log('🛑 Polling cancelled - component inactive');
       return;
     }
+
+    // Add maximum polling attempts with exponential backoff
+    const maxAttempts = 240; // 240 attempts = 4 minutes at 1 second intervals
+    if (pollCount >= maxAttempts) {
+      console.error('⏰ Maximum polling attempts reached, forcing completion check');
+      // Force a final completion check
+      try {
+        const { pollStatus: finalPoll } = await import('@/lib/api');
+        const finalData = await finalPoll(jobId);
+        if (finalData.status === 'ready') {
+          console.log('🎉 Found completed job on final check!');
+          await handleJobCompletion(jobId);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Final completion check failed:', error);
+      }
+      
+      pollingActiveRef.current = false;
+      setState('error');
+      setGenerationData(prev => ({ ...prev, error: 'Video generation timed out. The video may have been created but we lost track of it.' }));
+      return;
+    }
     
     try {
-      console.log('🔄 Polling status for job:', jobId, `(attempt ${pollCount + 1})`);
+      console.log('🔄 Polling status for job:', jobId, `(attempt ${pollCount + 1}/${maxAttempts})`);
       
       const { pollStatus, getFinalResult } = await import('@/lib/api');
       const data = await pollStatus(jobId);
@@ -119,47 +199,7 @@ const Create = () => {
       setGenerationData(prev => ({ ...prev, ...data }));
 
       if (data.status === 'ready') {
-        console.log('✅ Video generation complete!');
-        pollingActiveRef.current = false; // Stop polling
-        setState('ready');
-        // Get final result
-        const result = await getFinalResult(jobId);
-        console.log('🎬 Final result:', result);
-        
-        setGenerationData(prev => ({ ...prev, videoUrl: result.videoUrl, posterUrl: result.posterUrl, duration: result.durationSec }));
-        
-        // Save to IndexedDB
-        try {
-          console.log('💾 Saving video to library...');
-          const { idbSet } = await import('@/lib/idb');
-          
-          const videoId = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          const savedVideo = {
-            id: videoId,
-            filename: `seriesme_${new Date().toISOString().split('T')[0]}.webm`,
-            thumbnail: result.posterUrl,
-            duration: result.durationSec,
-            createdAt: new Date(),
-            script: script,
-            videoUrl: result.videoUrl,
-            width: result.width,
-            height: result.height
-          };
-          
-          await idbSet(savedVideo);
-          console.log('✅ Video saved to library:', videoId);
-          
-          toast({
-            title: "Video ready!",
-            description: "Your talking-head clip is ready and saved to your library.",
-          });
-        } catch (error) {
-          console.error('❌ Failed to save video to library:', error);
-          toast({
-            title: "Video ready!",
-            description: "Your talking-head clip is ready to download.",
-          });
-        }
+        await handleJobCompletion(jobId);
       } else if (data.status === 'error') {
         console.error('❌ Generation error:', data.error);
         pollingActiveRef.current = false; // Stop polling
@@ -175,17 +215,31 @@ const Create = () => {
         console.log('⏳ Status:', data.status, 'Progress:', data.progress);
         setState(data.status);
         
-        // Continue polling with timeout protection - very frequent for browser jobs
-        if (pollCount < 120) { // Max 2 minutes of polling (more attempts for frequent polling)
-          const pollInterval = jobId.startsWith('browser_') ? 250 : 2000; // 250ms for browser jobs, 2s for server
-          console.log(`🔄 Scheduling next poll in ${pollInterval}ms (attempt ${pollCount + 2})`);
+        // Continue polling with adaptive intervals
+        if (pollCount < maxAttempts) {
+          // Adaptive polling: start fast for browser jobs, then slow down
+          let pollInterval;
+          if (jobId.startsWith('browser_')) {
+            if (pollCount < 20) pollInterval = 250;      // First 5 seconds: 250ms
+            else if (pollCount < 60) pollInterval = 500; // Next 20 seconds: 500ms  
+            else pollInterval = 1000;                    // After that: 1 second
+          } else {
+            pollInterval = 2000; // Server jobs: 2 seconds
+          }
+          
+          console.log(`🔄 Scheduling next poll in ${pollInterval}ms (attempt ${pollCount + 2}/${maxAttempts})`);
           
           const timeoutId = setTimeout(() => {
             console.log(`🔄 Executing scheduled poll attempt ${pollCount + 2}`);
-            try {
-              pollStatus(jobId, pollCount + 1);
-            } catch (error) {
-              console.error('❌ Error in scheduled poll:', error);
+            if (pollingActiveRef.current) {
+              try {
+                pollStatus(jobId, pollCount + 1);
+              } catch (error) {
+                console.error('❌ Error in scheduled poll:', error);
+                // Don't stop polling on single errors, just log and continue
+              }
+            } else {
+              console.log('🛑 Polling stopped - component inactive');
             }
           }, pollInterval);
           
@@ -318,9 +372,24 @@ const Create = () => {
           etaSeconds={generationData.etaSeconds}
           error={generationData.error}
         />
-        <SeriesButton variant="ghost" size="default" className="w-full" onClick={handleCancel}>
-          Cancel
-        </SeriesButton>
+        <div className="flex gap-3">
+          <SeriesButton variant="ghost" size="default" className="flex-1" onClick={handleCancel}>
+            Cancel
+          </SeriesButton>
+          <SeriesButton 
+            variant="outline" 
+            size="default" 
+            className="flex-1" 
+            onClick={() => {
+              console.log('🔍 Manual status check requested');
+              if (generationData.jobId) {
+                pollStatus(generationData.jobId, 0);
+              }
+            }}
+          >
+            Check Status
+          </SeriesButton>
+        </div>
       </div>
     );
   } else {
