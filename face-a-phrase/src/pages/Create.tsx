@@ -145,7 +145,7 @@ const Create = () => {
             height: result.height
           };
           
-          await idbSet(videoId, savedVideo);
+          await idbSet(savedVideo);
           console.log('✅ Video saved to library:', videoId);
           
           toast({

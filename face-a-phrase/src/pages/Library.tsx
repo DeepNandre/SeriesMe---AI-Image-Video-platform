@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Download, Trash2, Copy, FolderOpen } from 'lucide-react';
+import { Play, Download, Trash2, Copy, FolderOpen, RefreshCw } from 'lucide-react';
 import { SeriesButton } from '@/components/SeriesButton';
 import Navigation from '@/components/Navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -20,24 +20,31 @@ const Library = () => {
   const { toast } = useToast();
   const [videos, setVideos] = useState<SavedVideo[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<SavedVideo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadVideos = async () => {
+    try {
+      setLoading(true);
+      const { idbGetAll } = await import('@/lib/idb');
+      const items = await idbGetAll<SavedVideo>();
+      
+      // Ensure dates are revived and sort by creation date (newest first)
+      const restored = items
+        .map(v => ({ ...v, createdAt: new Date(v.createdAt) } as unknown as SavedVideo))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      
+      setVideos(restored);
+      console.log('📚 Loaded videos from library:', restored.length);
+    } catch (error) {
+      console.error('❌ Failed to load videos from library:', error);
+      setVideos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { idbGetAll } = await import('@/lib/idb');
-        const items = await idbGetAll<SavedVideo>();
-        if (!cancelled) {
-          // Ensure dates are revived
-          const restored = items.map(v => ({ ...v, createdAt: new Date(v.createdAt) } as unknown as SavedVideo));
-          setVideos(restored);
-        }
-      } catch {
-        // fallback to empty
-        if (!cancelled) setVideos([]);
-      }
-    })();
-    return () => { cancelled = true };
+    loadVideos();
   }, []);
 
   const formatDate = (date: Date) => {
@@ -57,19 +64,53 @@ const Library = () => {
   };
 
   const handleDownload = (video: SavedVideo) => {
-    // Simulate download
-    toast({
-      title: "Download started",
-      description: `Downloading ${video.filename}`,
-    });
+    try {
+      // Create download link
+      const a = document.createElement('a');
+      a.href = video.videoUrl;
+      a.download = video.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Download started",
+        description: `Downloading ${video.filename}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Could not download the video",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (video: SavedVideo) => {
-    setVideos(prev => prev.filter(v => v.id !== video.id));
-    toast({
-      title: "Video deleted",
-      description: "Video removed from your library",
-    });
+  const handleDelete = async (video: SavedVideo) => {
+    try {
+      const { idbDel } = await import('@/lib/idb');
+      await idbDel(video.id);
+      
+      // Clean up blob URLs to free memory
+      if (video.videoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(video.videoUrl);
+      }
+      if (video.thumbnail.startsWith('blob:')) {
+        URL.revokeObjectURL(video.thumbnail);
+      }
+      
+      setVideos(prev => prev.filter(v => v.id !== video.id));
+      toast({
+        title: "Video deleted",
+        description: "Video removed from your library",
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the video",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDuplicate = (video: SavedVideo) => {
@@ -79,6 +120,22 @@ const Library = () => {
     });
     window.location.href = `/create?${params.toString()}`;
   };
+
+  if (loading) {
+    return (
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 bg-primary/20 rounded-full animate-spin flex items-center justify-center mx-auto">
+              <div className="w-8 h-8 bg-primary rounded-full"></div>
+            </div>
+            <p className="text-lg font-semibold text-foreground">Loading your videos...</p>
+          </div>
+        </div>
+        <Navigation />
+      </>
+    );
+  }
 
   if (videos.length === 0) {
     return (
@@ -143,6 +200,74 @@ const Library = () => {
 
   return (
     <>
+      {/* Video Player Modal */}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">{selectedVideo.filename}</h3>
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <video
+                src={selectedVideo.videoUrl}
+                poster={selectedVideo.thumbnail}
+                controls
+                className="w-full rounded-lg"
+                style={{ aspectRatio: '9/16' }}
+              >
+                Your browser does not support the video tag.
+              </video>
+              
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  <strong>Script:</strong> "{selectedVideo.script}"
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Duration:</strong> {formatDuration(selectedVideo.duration)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Created:</strong> {formatDate(selectedVideo.createdAt)}
+                </p>
+                {selectedVideo.width && selectedVideo.height && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Resolution:</strong> {selectedVideo.width} × {selectedVideo.height}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <SeriesButton
+                  onClick={() => handleDownload(selectedVideo)}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </SeriesButton>
+                <SeriesButton
+                  onClick={() => {
+                    handleDuplicate(selectedVideo);
+                    setSelectedVideo(null);
+                  }}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </SeriesButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-24 relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden">
@@ -157,10 +282,19 @@ const Library = () => {
               <h1 className="text-3xl font-black text-foreground">Your Videos</h1>
               <p className="text-sm text-primary font-semibold">🎬 Your viral content collection</p>
             </div>
-            <div className="bg-primary/10 rounded-full px-3 py-1">
-              <span className="text-sm font-bold text-primary">
-                {videos.length} video{videos.length !== 1 ? 's' : ''}
-              </span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={loadVideos}
+                className="bg-white/50 backdrop-blur-sm hover:bg-primary/10 border border-primary/20 text-primary font-semibold rounded-full p-2 transition-all duration-200"
+                title="Refresh library"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              <div className="bg-primary/10 rounded-full px-3 py-1">
+                <span className="text-sm font-bold text-primary">
+                  {videos.length} video{videos.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
           </div>
 
